@@ -5484,7 +5484,7 @@ USTATUS FfsParser::findByRange(const UINT32 base, const UINT32 size, const UMode
     // Sort by inserting
     for (int i = 0; i < model->rowCount(index); i++) {
         UModelIndex current = model->index(i, 0, index);
-        UINT32 currentSize = model->entire(current).size();
+        UINT32 currentSize = (UINT32)model->entire(current).size();
 
         // Must be within the existing region
         if (base < model->base(current) || (base + size) >(model->base(current) + currentSize))
@@ -5508,7 +5508,7 @@ USTATUS FfsParser::insertByRange(UINT32 offset, const UINT8 type, const UINT8 su
     UModelIndex containerIndex = imageIndex(parent);
     const UString parentName = model->type(parent) == Types::Image ? UString() : model->name(parent);
     const UINT32 imageBase = model->base(containerIndex) + offset;
-    const UINT32 imageSize = model->entire(containerIndex).size();
+    const UINT32 imageSize = (const UINT32)model->entire(containerIndex).size();
     const UINT32 fullSize = offset + hdrSize + bodySize + tailSize > imageSize ? imageSize - offset : hdrSize + bodySize + tailSize;
 
     UModelIndex foundIndex;
@@ -6159,7 +6159,7 @@ USTATUS FfsParser::pspParseDirectory(const UByteArray & amdImage, const UINT32 o
     if (offset + regionSize > amdImage.size()) {
         if (!probe)
             msg(usprintf("%s: ", __FUNCTION__) + typeName + usprintf(" directory region at offset %Xh is not fully within the image", offset), parent);
-        regionSize = amdImage.size() - offset;
+        regionSize = (UINT32)amdImage.size() - offset;
         // shall we exit with an error here?
     }
 
@@ -6272,7 +6272,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
     };
     const char* const fetPtr = amdImage.constData() + offset;
     const UINT32 fetHdrSize = sizeof(AMD_EMBEDDED_FIRMWARE::Signature);
-    UINT32 fetRawSize = offset + sizeof(AMD_EMBEDDED_FIRMWARE) > amdImage.size() ? amdImage.size() - offset : sizeof(AMD_EMBEDDED_FIRMWARE);
+    UINT32 fetRawSize = offset + sizeof(AMD_EMBEDDED_FIRMWARE) > amdImage.size() ? (UINT32)amdImage.size() - offset : sizeof(AMD_EMBEDDED_FIRMWARE);
     fetRawSize &= ~(UINT32)(sizeof(UINT32) - 1);
     fetRawSize = fetCut(fetPtr, fetRawSize);
     UINT32 fetNewSize = fetRawSize;
@@ -6301,7 +6301,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
         UModelIndex containerIndex = imageIndex(parent);
         result = insertByRange(model->base(parent) - model->base(containerIndex), Types::Image, Subtypes::AmdImage,
             UString("Embedded firmware structure"), UString(), UString(),
-            0, amdImage.size(), 0,
+            0, (UINT32)amdImage.size(), 0,
             parent, index);
         if (result == U_DIR_ALREADY_EXIST) {
             msg(usprintf("%s: ", __FUNCTION__) + model->name(index) + usprintf(" at offset %Xh was already parsed",
@@ -6488,7 +6488,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
                 const UString roStr   = "Read only: " + UString(roDiff ? "*" : ref.ro ? "true" : "false");
                 const UString compStr = "Compressed: " + UString(compDiff ? "*" : ref.comp ? "true" : "false");
                 const UString regStr  = "Region type: " + UString(regDiff ? "*" : usprintf("%02Xh", ref.reg));
-                const UString destStr = "Destination: " + UString(destDiff ? "*" : usprintf("%Xh", ref.dest));
+                const UString destStr = "Destination: " + UString(destDiff ? "*" : usprintf("%" PRIX64 "Xh", ref.dest));
                 infoStr += rstStr + "\n" + cpyStr + "\n" + roStr + "\n" + compStr + "\n" + flagsStr + "\n" + regStr + "\n" + destStr + "\n";
             }
             else
@@ -6567,7 +6567,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
             fetRawSize = fetUpdSize;
             fetTailSize = 0;
         }
-        UString fetInfo = usprintf("Maximum PSP offset: %Xh\n", pspMaxOffset - 1);
+        UString fetInfo = usprintf("Maximum PSP offset: %" PRIX64 "Xh\n", pspMaxOffset - 1);
         if (fetRawSize < sizeof(AMD_EMBEDDED_FIRMWARE)) {
             if (fetEndMarker == 1)
                 fetInfo += "Stripped by " + fetStrippedBy;
@@ -6621,7 +6621,7 @@ USTATUS FfsParser::parseAMDImage(const UByteArray& amdImage, const UINT32 localO
                     if (pspMaxOffset < INT32_MAX) {
                         if (pspMaxOffset > amdImage.size() - bankOffsetTemp)
                             pspMaxOffset = amdImage.size() - bankOffsetTemp;
-                        UINT32 bankSizeTemp = bitMaskFromValue(pspMaxOffset - 1) + 1;
+                        UINT32 bankSizeTemp = (UINT32)(bitMaskFromValue(pspMaxOffset - 1) + 1);
                         // some files, such as BIOS binary, can be compressed, but it's size declared
                         // is for uncompressed data; so, because BIOS binary usually (if not always)
                         // is at the end of the bank, it's resulted end may be slightly ouside the bank
@@ -6696,7 +6696,7 @@ USTATUS FfsParser::parseAMDImage(const UByteArray& amdImage, const UINT32 localO
         bool noEFS = true;
         if (efsDescsList.at(i).probe != UINT32_MAX) {
             noEFS = false;
-            pspSpiRomBase = UINT32_MAX - bitMaskFromValue(bankImage.size() - 1);
+            pspSpiRomBase = UINT32_MAX - (UINT32)bitMaskFromValue(bankImage.size() - 1);
             result = pspParseEFStructure(bankImage, probeOffset, bankIndex, efsIndex);
             UString efsTitleSuffix = efsInstance > 0 ? usprintf(" #%u", efsInstance + 1) : UString();
             if (model->rowCount(efsIndex) > 0) {

@@ -629,7 +629,7 @@ void UEFITool::goToAddress()
 
         int selected = goToAddressDialog->ui->bankComboBox->currentIndex();
         address = (UINT32)goToAddressDialog->ui->hexSpinBox->value();
-        index = model->findByBase(address - indexesAddressDiffs.at(selected).second, indexesAddressDiffs.at(selected).first);
+        index = model->findByBase((UINT32)(address - indexesAddressDiffs.at(selected).second), indexesAddressDiffs.at(selected).first);
     }
 
     if (index.isValid()) {
