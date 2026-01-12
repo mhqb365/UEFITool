@@ -626,3 +626,49 @@ UString fourCC(const UINT32 value)
     const UINT8 byte3 = (const UINT8)((value & 0xFF000000) >> 24);
     return usprintf("%c%c%c%c", byte0, byte1, byte2, byte3);
 }
+
+/*
+ * Creates the OSI Fletcher checksum. See 8473-1, Appendix C, section C.3.
+ * The checksum field of the passed PDU does not need to be reset to zero.
+ *
+ * The "Fletcher Checksum" was proposed in a paper by John G. Fletcher of
+ * Lawrence Livermore Labs.  The Fletcher Checksum was proposed as an
+ * alternative to cyclical redundancy checks because it provides error-
+ * detection properties similar to cyclical redundancy checks but at the
+ * cost of a simple summation technique.  Its characteristics were first
+ * published in IEEE Transactions on Communications in January 1982.  One
+ * version has been adopted by ISO for use in the class-4 transport layer
+ * of the network protocol.
+ *
+ */
+UINT32 fletcher32(const UByteArray& img)
+{
+    UINT32 c0;
+    UINT32 c1;
+    UINT32 checksum;
+    INTN index;
+    const UINT16* pptr = (const UINT16*)img.constData();
+
+    INTN length = img.size() / 2;
+
+    c0 = 0xFFFF;
+    c1 = 0xFFFF;
+
+    while (length) {
+        index = length >= 359 ? 359 : length;
+        length -= index;
+        do {
+            c0 += *(pptr++);
+            c1 += c0;
+        } while (--index);
+        c0 = (c0 & 0xFFFF) + (c0 >> 16);
+        c1 = (c1 & 0xFFFF) + (c1 >> 16);
+    }
+
+    /* Sums[0,1] mod 64K + overflow */
+    c0 = (c0 & 0xFFFF) + (c0 >> 16);
+    c1 = (c1 & 0xFFFF) + (c1 >> 16);
+    checksum = (c1 << 16) | c0;
+
+    return checksum;
+}

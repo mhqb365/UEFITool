@@ -2391,9 +2391,13 @@ USTATUS FfsParser::parsePadFileBody(const UModelIndex & index)
     if (!index.isValid())
         return U_INVALID_PARAMETER;
     
-    // Check if all bytes of the file are empty
     UByteArray body = model->body(index);
     
+    // Zero-body pad file is fine
+    if (body.isEmpty())
+        return U_SUCCESS;
+    
+    // Check if all bytes of the file are empty
     // Obtain required information from parent file
     UINT8 emptyByte = 0xFF;
     UModelIndex parentFileIndex = model->findParentOfType(index, Types::File);
@@ -5749,58 +5753,6 @@ USTATUS FfsParser::decompressBios(const UByteArray& fileImage, UByteArray& decom
     return U_SUCCESS;
 }
 
-/*
- * Creates the OSI Fletcher checksum. See 8473-1, Appendix C, section C.3.
- * The checksum field of the passed PDU does not need to be reset to zero.
- *
- * The "Fletcher Checksum" was proposed in a paper by John G. Fletcher of
- * Lawrence Livermore Labs.  The Fletcher Checksum was proposed as an
- * alternative to cyclical redundancy checks because it provides error-
- * detection properties similar to cyclical redundancy checks but at the
- * cost of a simple summation technique.  Its characteristics were first
- * published in IEEE Transactions on Communications in January 1982.  One
- * version has been adopted by ISO for use in the class-4 transport layer
- * of the network protocol.
- *
- * This program expects:
- *    stdin:    The input file to compute a checksum for.  The input file
- *              not be longer than 256 bytes.
- *    stdout:   Copied from the input file with the Fletcher's Checksum
- *              inserted 8 bytes after the beginning of the file.
- *    stderr:   Used to print out error messages.
- */
-UINT32 FfsParser::fletcher32(const UByteArray& Image)
-{
-    UINT32 c0;
-    UINT32 c1;
-    UINT32 checksum;
-    INTN index;
-    const UINT16* pptr = (const UINT16*)Image.constData();
-
-    INTN length = Image.size() / 2;
-
-    c0 = 0xFFFF;
-    c1 = 0xFFFF;
-
-    while (length) {
-        index = length >= 359 ? 359 : length;
-        length -= index;
-        do {
-            c0 += *(pptr++);
-            c1 += c0;
-        } while (--index);
-        c0 = (c0 & 0xFFFF) + (c0 >> 16);
-        c1 = (c1 & 0xFFFF) + (c1 >> 16);
-    }
-
-    /* Sums[0,1] mod 64K + overflow */
-    c0 = (c0 & 0xFFFF) + (c0 >> 16);
-    c1 = (c1 & 0xFFFF) + (c1 >> 16);
-    checksum = (c1 << 16) | c0;
-
-    return checksum;
-}
-
 USTATUS FfsParser::pspParseISHDirectory(const UByteArray& amdImage, const UINT32 offset, const UModelIndex& parent, UModelIndex& index, const bool probe)
 {
     if (offset + sizeof(AMD_ISH_DIRECTORY_TABLE) > amdImage.size())
@@ -6067,33 +6019,6 @@ USTATUS FfsParser::pspParsePSPEntries(const UByteArray& amdImage, const UINT32 o
             if (!probe)
                 model->setName(entryIndex, model->name(entryIndex) + nameTail);
     }
-
-    return U_SUCCESS;
-}
-
-// Decodes any firmware
-USTATUS FfsParser::pspParseFirmware(const UByteArray& amdImage, const UINT32 offset, const UModelIndex& parent, UModelIndex& index, const bool probe)
-{
-    USTATUS result;
-
-    if (offset % 16) {
-        return U_INVALID_PARAMETER;
-    }
-
-    if ((offset + sizeof(UINT32)) > amdImage.size()) {
-        if (!probe)
-            msg(usprintf("%s: firmware is located outside of the opened image: %Xh", __FUNCTION__, offset));
-        return U_BUFFER_TOO_SMALL;
-    }
-
-    const UINT32 fwsize = *((const UINT32*)(amdImage.constData() + offset));
-    if ((offset + fwsize > amdImage.size())) {
-        if (!probe)
-            msg(usprintf("%s: firmware is located outside of the opened image: %Xh", __FUNCTION__, offset));
-        return U_BUFFER_TOO_SMALL;
-    }
-
-    // TODO: add some firmware blob with proper header parsing
 
     return U_SUCCESS;
 }
@@ -6551,18 +6476,18 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
             UString typeStr = "Type: " + UString(typeDiff ? "*" : usprintf("%02Xh", ref.type));
             typeStr += dirDiff ? " (different directories types)" : usprintf(" (%s directory file)",
                 ref.dir ? "BIOS" : "PSP");
-            const UString subStr = "SubProgram: " + UString(subDiff ? "*" : usprintf("%02Xh", ref.sub));
-            const UString instStr = "Instance: " + UString(instDiff ? "*" : usprintf("%01Xh", ref.inst));
-            const UString romStr = "RomId: " + UString(romDiff ? "*" : usprintf("%01Xh", ref.rom));
-            const UString wrStr = "Writable: " + UString(wrDiff ? "*" : ref.wr ? "true" : "false");
+            const UString subStr   = "SubProgram: " + UString(subDiff ? "*" : usprintf("%02Xh", ref.sub));
+            const UString instStr  = "Instance: " + UString(instDiff ? "*" : usprintf("%01Xh", ref.inst));
+            const UString romStr   = "RomId: " + UString(romDiff ? "*" : usprintf("%01Xh", ref.rom));
+            const UString wrStr    = "Writable: " + UString(wrDiff ? "*" : ref.wr ? "true" : "false");
             const UString flagsStr = "Flags: " + UString(flagsDiff ? "*" : usprintf("%04Xh", ref.flags));
             UString infoStr = typeStr + "\n" + subStr + "\n" + instStr + "\n" + romStr + "\n" + wrStr + "\n";
             if (!dirDiff && ref.dir) {
-                const UString rstStr = "Reset-image: " + UString(rstDiff ? "*" : ref.rst ? "true" : "false");
-                const UString cpyStr = "Copy image: " + UString(cpyDiff ? "*" : ref.cpy ? "true" : "false");
-                const UString roStr = "Read only: " + UString(roDiff ? "*" : ref.ro ? "true" : "false");
+                const UString rstStr  = "Reset-image: " + UString(rstDiff ? "*" : ref.rst ? "true" : "false");
+                const UString cpyStr  = "Copy image: " + UString(cpyDiff ? "*" : ref.cpy ? "true" : "false");
+                const UString roStr   = "Read only: " + UString(roDiff ? "*" : ref.ro ? "true" : "false");
                 const UString compStr = "Compressed: " + UString(compDiff ? "*" : ref.comp ? "true" : "false");
-                const UString regStr = "Region type: " + UString(regDiff ? "*" : usprintf("%02Xh", ref.reg));
+                const UString regStr  = "Region type: " + UString(regDiff ? "*" : usprintf("%02Xh", ref.reg));
                 const UString destStr = "Destination: " + UString(destDiff ? "*" : usprintf("%Xh", ref.dest));
                 infoStr += rstStr + "\n" + cpyStr + "\n" + roStr + "\n" + compStr + "\n" + flagsStr + "\n" + regStr + "\n" + destStr + "\n";
             }

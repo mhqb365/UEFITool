@@ -207,6 +207,26 @@ private:
 
     USTATUS parseVendorHashFile(const UByteArray & fileGuid, const UModelIndex & index);
 
+    // AMD specific
+    UString pspFileName(const UINT8 type, const UINT8 sub);
+    UINT32 pspFileOffset(const UByteArray& amdImage, const UINT32 offset, const UINT32 entryOffset,
+        const UINT32 size, const AMD_ADDRESS_ADDRESSMODE& addressMode);
+    UINT32 pspDirectoryOffset(const UByteArray& amdImage, const UINT32 offset);
+    USTATUS decompressBios(const UByteArray& fileImage, UByteArray& decompressed);
+    USTATUS pspParseISHDirectory(const UByteArray& amdImage, const UINT32 offset,
+        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
+    USTATUS pspParseComboEntries(const UByteArray& amdImage, const UINT32 offset, const UINT32 headerSize, const UINT32 numEntries,
+        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
+    USTATUS pspParseBIOSEntries(const UByteArray& amdImage, const UINT32 offset, const UINT32 headerSize, const UINT32 numEntries,
+        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
+    USTATUS pspParsePSPEntries(const UByteArray& amdImage, const UINT32 offset, const UINT32 headerSize, const UINT32 numEntries,
+        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
+
+    USTATUS pspParseDirectory(const UByteArray& amdImage, const UINT32 offset, const Subtypes::DirectorySubtypes expected,
+        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
+    USTATUS pspParseEFStructure(const UByteArray& amdImage, const UINT32 offset, const UModelIndex& parent, UModelIndex& index, const bool probe = false);
+    USTATUS parseAMDImage(const UByteArray& amdImage, const UINT32 localOffset, const UModelIndex& parent, UModelIndex& index);
+    
     // Second pass
     USTATUS performSecondPass(const UModelIndex & index);
     USTATUS addInfoRecursive(const UModelIndex & index, bool enableCpuAddresses = false);
@@ -226,29 +246,6 @@ private:
         const UString name, const UString text, const UString info,
         const UINT32 hdrSize, const UINT32 bodySize, const UINT32 tailSize,
         const UModelIndex& parent, UModelIndex& index);
-    USTATUS decompressBios(const UByteArray& fileImage, UByteArray& decompressed);
-    UINT32 fletcher32(const UByteArray& image);
-
-    // AMD specific
-    UString pspFileName(const UINT8 type, const UINT8 sub);
-    UINT32 pspFileOffset(const UByteArray& amdImage, const UINT32 offset, const UINT32 entryOffset,
-        const UINT32 size, const AMD_ADDRESS_ADDRESSMODE& addressMode);
-    UINT32 pspDirectoryOffset(const UByteArray& amdImage, const UINT32 offset);
-
-    USTATUS pspParseISHDirectory(const UByteArray& amdImage, const UINT32 offset,
-        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-    USTATUS pspParseComboEntries(const UByteArray& amdImage, const UINT32 offset, const UINT32 headerSize, const UINT32 numEntries,
-        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-    USTATUS pspParseBIOSEntries(const UByteArray& amdImage, const UINT32 offset, const UINT32 headerSize, const UINT32 numEntries,
-        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-    USTATUS pspParsePSPEntries(const UByteArray& amdImage, const UINT32 offset, const UINT32 headerSize, const UINT32 numEntries,
-        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-
-    USTATUS pspParseDirectory(const UByteArray& amdImage, const UINT32 offset, const Subtypes::DirectorySubtypes expected,
-        const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-    USTATUS pspParseFirmware(const UByteArray& amdImage, const UINT32 offset, const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-    USTATUS pspParseEFStructure(const UByteArray& amdImage, const UINT32 offset, const UModelIndex& parent, UModelIndex& index, const bool probe = false);
-    USTATUS parseAMDImage(const UByteArray& amdImage, const UINT32 localOffset, const UModelIndex& parent, UModelIndex& index);
     
 #ifdef U_ENABLE_FIT_PARSING_SUPPORT
     friend class FitParser; // Make FFS parsing routines accessible to FitParser

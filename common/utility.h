@@ -85,4 +85,7 @@ inline T readUnaligned(const T *v) {
     return tmp;
 }
 
+// Fletcher checksum calculation routine
+UINT32 fletcher32(const UByteArray& img);
+
 #endif // UTILITY_H
