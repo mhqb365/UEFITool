@@ -19,6 +19,7 @@ enums:
   known_header_version:
     0x00000000: v0_0
     0x00030000: v3_0
+    0x00050004: v5_4
     
 seq:
 - id: header

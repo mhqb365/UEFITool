@@ -47,7 +47,7 @@ types:
     type: b1le
   - id: name
     type: strz
-    encoding: ascii
+    encoding: ASCII
     size: len_name
   - id: len_data
     type: u2

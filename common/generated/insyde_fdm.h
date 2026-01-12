@@ -2,23 +2,25 @@
 
 // This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
+class insyde_fdm_t;
+
 #include "../kaitai/kaitaistruct.h"
 #include <stdint.h>
 #include <memory>
 #include <vector>
 
-#if KAITAI_STRUCT_VERSION < 9000L
-#error "Incompatible Kaitai Struct C++/STL API: version 0.9 or later is required"
+#if KAITAI_STRUCT_VERSION < 11000L
+#error "Incompatible Kaitai Struct C++/STL API: version 0.11 or later is required"
 #endif
 
 class insyde_fdm_t : public kaitai::kstruct {
 
 public:
-    class fdm_entries_t;
-    class fdm_extension_t;
     class fdm_board_ids_t;
-    class fdm_extensions_t;
+    class fdm_entries_t;
     class fdm_entry_t;
+    class fdm_extension_t;
+    class fdm_extensions_t;
 
     insyde_fdm_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
 
@@ -28,56 +30,6 @@ private:
 
 public:
     ~insyde_fdm_t();
-
-    class fdm_entries_t : public kaitai::kstruct {
-
-    public:
-
-        fdm_entries_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
-
-    private:
-        void _read();
-        void _clean_up();
-
-    public:
-        ~fdm_entries_t();
-
-    private:
-        std::unique_ptr<std::vector<std::unique_ptr<fdm_entry_t>>> m_entries;
-        insyde_fdm_t* m__root;
-        insyde_fdm_t* m__parent;
-
-    public:
-        std::vector<std::unique_ptr<fdm_entry_t>>* entries() const { return m_entries.get(); }
-        insyde_fdm_t* _root() const { return m__root; }
-        insyde_fdm_t* _parent() const { return m__parent; }
-    };
-
-    class fdm_extension_t : public kaitai::kstruct {
-
-    public:
-
-        fdm_extension_t(kaitai::kstream* p__io, insyde_fdm_t::fdm_extensions_t* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
-
-    private:
-        void _read();
-        void _clean_up();
-
-    public:
-        ~fdm_extension_t();
-
-    private:
-        uint16_t m_offset;
-        uint16_t m_count;
-        insyde_fdm_t* m__root;
-        insyde_fdm_t::fdm_extensions_t* m__parent;
-
-    public:
-        uint16_t offset() const { return m_offset; }
-        uint16_t count() const { return m_count; }
-        insyde_fdm_t* _root() const { return m__root; }
-        insyde_fdm_t::fdm_extensions_t* _parent() const { return m__parent; }
-    };
 
     class fdm_board_ids_t : public kaitai::kstruct {
 
@@ -107,26 +59,26 @@ public:
         insyde_fdm_t* _parent() const { return m__parent; }
     };
 
-    class fdm_extensions_t : public kaitai::kstruct {
+    class fdm_entries_t : public kaitai::kstruct {
 
     public:
 
-        fdm_extensions_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
+        fdm_entries_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
 
     private:
         void _read();
         void _clean_up();
 
     public:
-        ~fdm_extensions_t();
+        ~fdm_entries_t();
 
     private:
-        std::unique_ptr<std::vector<std::unique_ptr<fdm_extension_t>>> m_extensions;
+        std::unique_ptr<std::vector<std::unique_ptr<fdm_entry_t>>> m_entries;
         insyde_fdm_t* m__root;
         insyde_fdm_t* m__parent;
 
     public:
-        std::vector<std::unique_ptr<fdm_extension_t>>* extensions() const { return m_extensions.get(); }
+        std::vector<std::unique_ptr<fdm_entry_t>>* entries() const { return m_entries.get(); }
         insyde_fdm_t* _root() const { return m__root; }
         insyde_fdm_t* _parent() const { return m__parent; }
     };
@@ -170,6 +122,56 @@ public:
         std::string hash() const { return m_hash; }
         insyde_fdm_t* _root() const { return m__root; }
         insyde_fdm_t::fdm_entries_t* _parent() const { return m__parent; }
+    };
+
+    class fdm_extension_t : public kaitai::kstruct {
+
+    public:
+
+        fdm_extension_t(kaitai::kstream* p__io, insyde_fdm_t::fdm_extensions_t* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~fdm_extension_t();
+
+    private:
+        uint16_t m_offset;
+        uint16_t m_count;
+        insyde_fdm_t* m__root;
+        insyde_fdm_t::fdm_extensions_t* m__parent;
+
+    public:
+        uint16_t offset() const { return m_offset; }
+        uint16_t count() const { return m_count; }
+        insyde_fdm_t* _root() const { return m__root; }
+        insyde_fdm_t::fdm_extensions_t* _parent() const { return m__parent; }
+    };
+
+    class fdm_extensions_t : public kaitai::kstruct {
+
+    public:
+
+        fdm_extensions_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent = nullptr, insyde_fdm_t* p__root = nullptr);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~fdm_extensions_t();
+
+    private:
+        std::unique_ptr<std::vector<std::unique_ptr<fdm_extension_t>>> m_extensions;
+        insyde_fdm_t* m__root;
+        insyde_fdm_t* m__parent;
+
+    public:
+        std::vector<std::unique_ptr<fdm_extension_t>>* extensions() const { return m_extensions.get(); }
+        insyde_fdm_t* _root() const { return m__root; }
+        insyde_fdm_t* _parent() const { return m__parent; }
     };
 
 private:

@@ -4,7 +4,7 @@
 
 apple_sysf_t::apple_sysf_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, apple_sysf_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
-    m__root = this; (void)p__root;
+    m__root = p__root ? p__root : this;
     m_body = nullptr;
     m__io__raw_body = nullptr;
     f_len_sysf_store_header = false;
@@ -16,7 +16,7 @@ void apple_sysf_t::_read() {
     m_unknown = m__io->read_u1();
     m_unknown1 = m__io->read_u4le();
     m_sysf_size = m__io->read_u2le();
-    m__raw_body = m__io->read_bytes(((sysf_size() - len_sysf_store_header()) - 4));
+    m__raw_body = m__io->read_bytes((sysf_size() - len_sysf_store_header()) - 4);
     m__io__raw_body = std::unique_ptr<kaitai::kstream>(new kaitai::kstream(m__raw_body));
     m_body = std::unique_ptr<sysf_store_body_t>(new sysf_store_body_t(m__io__raw_body.get(), this, m__root));
     m_crc = m__io->read_u4le();
@@ -46,7 +46,7 @@ void apple_sysf_t::sysf_store_body_t::_read() {
             _ = new sysf_variable_t(m__io, this, m__root);
             m_variables->push_back(std::move(std::unique_ptr<sysf_variable_t>(_)));
             i++;
-        } while (!( (( ((_->len_name() == 3) && (_->name() == (std::string("EOF")))) ) || (_io()->is_eof())) ));
+        } while (!( (( ((_->len_name() == 3) && (_->name() == std::string("EOF"))) ) || (_io()->is_eof())) ));
     }
     m_zeroes = std::unique_ptr<std::vector<uint8_t>>(new std::vector<uint8_t>());
     {
@@ -75,7 +75,7 @@ void apple_sysf_t::sysf_variable_t::_read() {
     m_len_name = m__io->read_bits_int_le(7);
     m_invalid_flag = m__io->read_bits_int_le(1);
     m__io->align_to_byte();
-    m_name = kaitai::kstream::bytes_to_str(kaitai::kstream::bytes_terminate(m__io->read_bytes(len_name()), 0, false), std::string("ascii"));
+    m_name = kaitai::kstream::bytes_to_str(kaitai::kstream::bytes_terminate(m__io->read_bytes(len_name()), 0, false), "ASCII");
     n_len_data = true;
     if (name() != std::string("EOF")) {
         n_len_data = false;
@@ -102,7 +102,7 @@ void apple_sysf_t::sysf_variable_t::_clean_up() {
 int8_t apple_sysf_t::len_sysf_store_header() {
     if (f_len_sysf_store_header)
         return m_len_sysf_store_header;
-    m_len_sysf_store_header = 11;
     f_len_sysf_store_header = true;
+    m_len_sysf_store_header = 11;
     return m_len_sysf_store_header;
 }

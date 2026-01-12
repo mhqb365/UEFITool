@@ -4,7 +4,7 @@
 
 edk2_ftw_t::edk2_ftw_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, edk2_ftw_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
-    m__root = this; (void)p__root;
+    m__root = p__root ? p__root : this;
     f_len_ftw_store_header_32 = false;
     f_len_ftw_store_header_64 = false;
     _read();
@@ -29,7 +29,7 @@ void edk2_ftw_t::_read() {
     n_write_queue_64 = true;
     if (kaitai::kstream::mod(len_write_queue_32(), 16) == 0) {
         n_write_queue_64 = false;
-        m_write_queue_64 = m__io->read_bytes(((static_cast<uint64_t>(len_write_queue_64()) << 32) + len_write_queue_32()));
+        m_write_queue_64 = m__io->read_bytes((static_cast<uint64_t>(len_write_queue_64()) << 32) + len_write_queue_32());
     }
 }
 
@@ -49,15 +49,15 @@ void edk2_ftw_t::_clean_up() {
 int8_t edk2_ftw_t::len_ftw_store_header_32() {
     if (f_len_ftw_store_header_32)
         return m_len_ftw_store_header_32;
-    m_len_ftw_store_header_32 = 28;
     f_len_ftw_store_header_32 = true;
+    m_len_ftw_store_header_32 = 28;
     return m_len_ftw_store_header_32;
 }
 
 int8_t edk2_ftw_t::len_ftw_store_header_64() {
     if (f_len_ftw_store_header_64)
         return m_len_ftw_store_header_64;
-    m_len_ftw_store_header_64 = 32;
     f_len_ftw_store_header_64 = true;
+    m_len_ftw_store_header_64 = 32;
     return m_len_ftw_store_header_64;
 }

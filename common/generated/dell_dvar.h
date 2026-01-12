@@ -2,13 +2,15 @@
 
 // This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
+class dell_dvar_t;
+
 #include "../kaitai/kaitaistruct.h"
 #include <stdint.h>
 #include <memory>
 #include <vector>
 
-#if KAITAI_STRUCT_VERSION < 9000L
-#error "Incompatible Kaitai Struct C++/STL API: version 0.9 or later is required"
+#if KAITAI_STRUCT_VERSION < 11000L
+#error "Incompatible Kaitai Struct C++/STL API: version 0.11 or later is required"
 #endif
 
 class dell_dvar_t : public kaitai::kstruct {
@@ -39,34 +41,6 @@ public:
         ~dvar_entry_t();
 
     private:
-        bool f_namespace_id;
-        int32_t m_namespace_id;
-
-    public:
-        int32_t namespace_id();
-
-    private:
-        bool f_len_data_8;
-        int32_t m_len_data_8;
-
-    public:
-        int32_t len_data_8();
-
-    private:
-        bool f_state;
-        int32_t m_state;
-
-    public:
-        int32_t state();
-
-    private:
-        bool f_len_data_16;
-        int32_t m_len_data_16;
-
-    public:
-        int32_t len_data_16();
-
-    private:
         bool f_attributes;
         int32_t m_attributes;
 
@@ -81,11 +55,18 @@ public:
         int32_t flags();
 
     private:
-        bool f_name_id_8;
-        int32_t m_name_id_8;
+        bool f_len_data_16;
+        int32_t m_len_data_16;
 
     public:
-        int32_t name_id_8();
+        int32_t len_data_16();
+
+    private:
+        bool f_len_data_8;
+        int32_t m_len_data_8;
+
+    public:
+        int32_t len_data_8();
 
     private:
         bool f_name_id_16;
@@ -93,6 +74,27 @@ public:
 
     public:
         int32_t name_id_16();
+
+    private:
+        bool f_name_id_8;
+        int32_t m_name_id_8;
+
+    public:
+        int32_t name_id_8();
+
+    private:
+        bool f_namespace_id;
+        int32_t m_namespace_id;
+
+    public:
+        int32_t namespace_id();
+
+    private:
+        bool f_state;
+        int32_t m_state;
+
+    public:
+        int32_t state();
 
     private:
         bool f_type;
@@ -201,11 +203,11 @@ public:
     };
 
 private:
-    bool f_len_store;
-    int32_t m_len_store;
+    bool f_data_offset;
+    int8_t m_data_offset;
 
 public:
-    int32_t len_store();
+    int8_t data_offset();
 
 private:
     bool f_flags;
@@ -215,11 +217,11 @@ public:
     int32_t flags();
 
 private:
-    bool f_data_offset;
-    int8_t m_data_offset;
+    bool f_len_store;
+    int32_t m_len_store;
 
 public:
-    int8_t data_offset();
+    int32_t len_store();
 
 private:
     std::string m_signature;

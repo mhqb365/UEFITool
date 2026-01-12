@@ -4,7 +4,7 @@
 
 insyde_fdm_t::insyde_fdm_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
-    m__root = this; (void)p__root;
+    m__root = p__root ? p__root : this;
     m_extensions = nullptr;
     m__io__raw_extensions = nullptr;
     m_board_ids = nullptr;
@@ -26,7 +26,7 @@ void insyde_fdm_t::_read() {
     n_extensions = true;
     if (revision() > 2) {
         n_extensions = false;
-        m__raw_extensions = m__io->read_bytes((num_extensions() * 4));
+        m__raw_extensions = m__io->read_bytes(num_extensions() * 4);
         m__io__raw_extensions = std::unique_ptr<kaitai::kstream>(new kaitai::kstream(m__raw_extensions));
         m_extensions = std::unique_ptr<fdm_extensions_t>(new fdm_extensions_t(m__io__raw_extensions.get(), this, m__root));
     }
@@ -35,7 +35,7 @@ void insyde_fdm_t::_read() {
         n_board_ids = false;
         m_board_ids = std::unique_ptr<fdm_board_ids_t>(new fdm_board_ids_t(m__io, this, m__root));
     }
-    m__raw_entries = m__io->read_bytes((store_size() - data_offset()));
+    m__raw_entries = m__io->read_bytes(store_size() - data_offset());
     m__io__raw_entries = std::unique_ptr<kaitai::kstream>(new kaitai::kstream(m__raw_entries));
     m_entries = std::unique_ptr<fdm_entries_t>(new fdm_entries_t(m__io__raw_entries.get(), this, m__root));
 }
@@ -49,6 +49,30 @@ void insyde_fdm_t::_clean_up() {
     }
     if (!n_board_ids) {
     }
+}
+
+insyde_fdm_t::fdm_board_ids_t::fdm_board_ids_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+    m_board_ids = nullptr;
+    _read();
+}
+
+void insyde_fdm_t::fdm_board_ids_t::_read() {
+    m_region_index = m__io->read_u4le();
+    m_num_board_ids = m__io->read_u4le();
+    m_board_ids = std::unique_ptr<std::vector<uint64_t>>(new std::vector<uint64_t>());
+    const int l_board_ids = num_board_ids();
+    for (int i = 0; i < l_board_ids; i++) {
+        m_board_ids->push_back(std::move(m__io->read_u8le()));
+    }
+}
+
+insyde_fdm_t::fdm_board_ids_t::~fdm_board_ids_t() {
+    _clean_up();
+}
+
+void insyde_fdm_t::fdm_board_ids_t::_clean_up() {
 }
 
 insyde_fdm_t::fdm_entries_t::fdm_entries_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
@@ -76,6 +100,37 @@ insyde_fdm_t::fdm_entries_t::~fdm_entries_t() {
 void insyde_fdm_t::fdm_entries_t::_clean_up() {
 }
 
+insyde_fdm_t::fdm_entry_t::fdm_entry_t(kaitai::kstream* p__io, insyde_fdm_t::fdm_entries_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+    f_region_base = false;
+    _read();
+}
+
+void insyde_fdm_t::fdm_entry_t::_read() {
+    m_guid = m__io->read_bytes(16);
+    m_region_id = m__io->read_bytes(16);
+    m_region_offset = m__io->read_u8le();
+    m_region_size = m__io->read_u8le();
+    m_attributes = m__io->read_u4le();
+    m_hash = m__io->read_bytes(((((_parent()->_parent()->entry_size() - 16) - 16) - 8) - 8) - 4);
+}
+
+insyde_fdm_t::fdm_entry_t::~fdm_entry_t() {
+    _clean_up();
+}
+
+void insyde_fdm_t::fdm_entry_t::_clean_up() {
+}
+
+int32_t insyde_fdm_t::fdm_entry_t::region_base() {
+    if (f_region_base)
+        return m_region_base;
+    f_region_base = true;
+    m_region_base = static_cast<uint32_t>(_root()->fd_base_address()) + static_cast<uint32_t>(region_offset());
+    return m_region_base;
+}
+
 insyde_fdm_t::fdm_extension_t::fdm_extension_t(kaitai::kstream* p__io, insyde_fdm_t::fdm_extensions_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
     m__root = p__root;
@@ -92,30 +147,6 @@ insyde_fdm_t::fdm_extension_t::~fdm_extension_t() {
 }
 
 void insyde_fdm_t::fdm_extension_t::_clean_up() {
-}
-
-insyde_fdm_t::fdm_board_ids_t::fdm_board_ids_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
-    m__parent = p__parent;
-    m__root = p__root;
-    m_board_ids = nullptr;
-    _read();
-}
-
-void insyde_fdm_t::fdm_board_ids_t::_read() {
-    m_region_index = m__io->read_u4le();
-    m_num_board_ids = m__io->read_u4le();
-    m_board_ids = std::unique_ptr<std::vector<uint64_t>>(new std::vector<uint64_t>());
-    const int l_board_ids = num_board_ids();
-    for (int i = 0; i < l_board_ids; i++) {
-        m_board_ids->push_back(std::move(m__io->read_u8le()));
-    }
-}
-
-insyde_fdm_t::fdm_board_ids_t::~fdm_board_ids_t() {
-    _clean_up();
-}
-
-void insyde_fdm_t::fdm_board_ids_t::_clean_up() {
 }
 
 insyde_fdm_t::fdm_extensions_t::fdm_extensions_t(kaitai::kstream* p__io, insyde_fdm_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
@@ -141,35 +172,4 @@ insyde_fdm_t::fdm_extensions_t::~fdm_extensions_t() {
 }
 
 void insyde_fdm_t::fdm_extensions_t::_clean_up() {
-}
-
-insyde_fdm_t::fdm_entry_t::fdm_entry_t(kaitai::kstream* p__io, insyde_fdm_t::fdm_entries_t* p__parent, insyde_fdm_t* p__root) : kaitai::kstruct(p__io) {
-    m__parent = p__parent;
-    m__root = p__root;
-    f_region_base = false;
-    _read();
-}
-
-void insyde_fdm_t::fdm_entry_t::_read() {
-    m_guid = m__io->read_bytes(16);
-    m_region_id = m__io->read_bytes(16);
-    m_region_offset = m__io->read_u8le();
-    m_region_size = m__io->read_u8le();
-    m_attributes = m__io->read_u4le();
-    m_hash = m__io->read_bytes((((((_parent()->_parent()->entry_size() - 16) - 16) - 8) - 8) - 4));
-}
-
-insyde_fdm_t::fdm_entry_t::~fdm_entry_t() {
-    _clean_up();
-}
-
-void insyde_fdm_t::fdm_entry_t::_clean_up() {
-}
-
-int32_t insyde_fdm_t::fdm_entry_t::region_base() {
-    if (f_region_base)
-        return m_region_base;
-    m_region_base = (static_cast<uint32_t>(_root()->fd_base_address()) + static_cast<uint32_t>(region_offset()));
-    f_region_base = true;
-    return m_region_base;
 }

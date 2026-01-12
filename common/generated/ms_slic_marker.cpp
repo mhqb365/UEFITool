@@ -4,7 +4,7 @@
 
 ms_slic_marker_t::ms_slic_marker_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, ms_slic_marker_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
-    m__root = this; (void)p__root;
+    m__root = p__root ? p__root : this;
     _read();
 }
 

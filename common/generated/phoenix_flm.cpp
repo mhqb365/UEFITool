@@ -4,10 +4,10 @@
 
 phoenix_flm_t::phoenix_flm_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, phoenix_flm_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
-    m__root = this; (void)p__root;
+    m__root = p__root ? p__root : this;
     m_entries = nullptr;
-    f_len_flm_store_header = false;
     f_len_flm_entry = false;
+    f_len_flm_store_header = false;
     _read();
 }
 
@@ -51,18 +51,18 @@ phoenix_flm_t::flm_entry_t::~flm_entry_t() {
 void phoenix_flm_t::flm_entry_t::_clean_up() {
 }
 
-int8_t phoenix_flm_t::len_flm_store_header() {
-    if (f_len_flm_store_header)
-        return m_len_flm_store_header;
-    m_len_flm_store_header = 16;
-    f_len_flm_store_header = true;
-    return m_len_flm_store_header;
-}
-
 int8_t phoenix_flm_t::len_flm_entry() {
     if (f_len_flm_entry)
         return m_len_flm_entry;
-    m_len_flm_entry = 36;
     f_len_flm_entry = true;
+    m_len_flm_entry = 36;
     return m_len_flm_entry;
+}
+
+int8_t phoenix_flm_t::len_flm_store_header() {
+    if (f_len_flm_store_header)
+        return m_len_flm_store_header;
+    f_len_flm_store_header = true;
+    m_len_flm_store_header = 16;
+    return m_len_flm_store_header;
 }

@@ -2,13 +2,15 @@
 
 // This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
+class phoenix_flm_t;
+
 #include "../kaitai/kaitaistruct.h"
 #include <stdint.h>
 #include <memory>
 #include <vector>
 
-#if KAITAI_STRUCT_VERSION < 9000L
-#error "Incompatible Kaitai Struct C++/STL API: version 0.9 or later is required"
+#if KAITAI_STRUCT_VERSION < 11000L
+#error "Incompatible Kaitai Struct C++/STL API: version 0.11 or later is required"
 #endif
 
 class phoenix_flm_t : public kaitai::kstruct {
@@ -60,18 +62,18 @@ public:
     };
 
 private:
-    bool f_len_flm_store_header;
-    int8_t m_len_flm_store_header;
-
-public:
-    int8_t len_flm_store_header();
-
-private:
     bool f_len_flm_entry;
     int8_t m_len_flm_entry;
 
 public:
     int8_t len_flm_entry();
+
+private:
+    bool f_len_flm_store_header;
+    int8_t m_len_flm_store_header;
+
+public:
+    int8_t len_flm_store_header();
 
 private:
     std::string m_signature;

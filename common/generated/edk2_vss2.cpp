@@ -5,7 +5,7 @@
 
 edk2_vss2_t::edk2_vss2_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent, edk2_vss2_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
-    m__root = this; (void)p__root;
+    m__root = p__root ? p__root : this;
     m_body = nullptr;
     m__io__raw_body = nullptr;
     f_len_vss2_store_header = false;
@@ -16,16 +16,16 @@ void edk2_vss2_t::_read() {
     m_signature = m__io->read_bytes(16);
     m_vss2_size = m__io->read_u4le();
     {
-        uint32_t _ = vss2_size();
+        uint32_t _ = m_vss2_size;
         if (!( ((_ > static_cast<uint32_t>(len_vss2_store_header())) && (_ < 4294967295UL)) )) {
-            throw kaitai::validation_expr_error<uint32_t>(vss2_size(), _io(), std::string("/seq/1"));
+            throw kaitai::validation_expr_error<uint32_t>(m_vss2_size, m__io, std::string("/seq/1"));
         }
     }
     m_format = m__io->read_u1();
     m_state = m__io->read_u1();
     m_reserved = m__io->read_u2le();
     m_reserved1 = m__io->read_u4le();
-    m__raw_body = m__io->read_bytes((vss2_size() - len_vss2_store_header()));
+    m__raw_body = m__io->read_bytes(vss2_size() - len_vss2_store_header());
     m__io__raw_body = std::unique_ptr<kaitai::kstream>(new kaitai::kstream(m__raw_body));
     m_body = std::unique_ptr<vss2_store_body_t>(new vss2_store_body_t(m__io__raw_body.get(), this, m__root));
 }
@@ -64,42 +64,18 @@ edk2_vss2_t::vss2_store_body_t::~vss2_store_body_t() {
 void edk2_vss2_t::vss2_store_body_t::_clean_up() {
 }
 
-edk2_vss2_t::vss2_variable_attributes_t::vss2_variable_attributes_t(kaitai::kstream* p__io, edk2_vss2_t::vss2_variable_t* p__parent, edk2_vss2_t* p__root) : kaitai::kstruct(p__io) {
-    m__parent = p__parent;
-    m__root = p__root;
-    _read();
-}
-
-void edk2_vss2_t::vss2_variable_attributes_t::_read() {
-    m_non_volatile = m__io->read_bits_int_le(1);
-    m_boot_service = m__io->read_bits_int_le(1);
-    m_runtime = m__io->read_bits_int_le(1);
-    m_hw_error_record = m__io->read_bits_int_le(1);
-    m_auth_write = m__io->read_bits_int_le(1);
-    m_time_based_auth = m__io->read_bits_int_le(1);
-    m_append_write = m__io->read_bits_int_le(1);
-    m_reserved = m__io->read_bits_int_le(25);
-}
-
-edk2_vss2_t::vss2_variable_attributes_t::~vss2_variable_attributes_t() {
-    _clean_up();
-}
-
-void edk2_vss2_t::vss2_variable_attributes_t::_clean_up() {
-}
-
 edk2_vss2_t::vss2_variable_t::vss2_variable_t(kaitai::kstream* p__io, edk2_vss2_t::vss2_store_body_t* p__parent, edk2_vss2_t* p__root) : kaitai::kstruct(p__io) {
     m__parent = p__parent;
     m__root = p__root;
     m_attributes = nullptr;
-    f_is_auth = false;
-    f_len_standard_header = false;
-    f_end_offset_auth = false;
-    f_len_alignment_padding = false;
-    f_len_auth_header = false;
     f_end_offset = false;
-    f_len_alignment_padding_auth = false;
+    f_end_offset_auth = false;
+    f_is_auth = false;
     f_is_valid = false;
+    f_len_alignment_padding = false;
+    f_len_alignment_padding_auth = false;
+    f_len_auth_header = false;
+    f_len_standard_header = false;
     f_offset = false;
     _read();
 }
@@ -116,9 +92,9 @@ void edk2_vss2_t::vss2_variable_t::_read() {
         n_signature_last = false;
         m_signature_last = m__io->read_u1();
         {
-            uint8_t _ = signature_last();
+            uint8_t _ = m_signature_last;
             if (!(_ == 85)) {
-                throw kaitai::validation_expr_error<uint8_t>(signature_last(), _io(), std::string("/types/vss2_variable/seq/2"));
+                throw kaitai::validation_expr_error<uint8_t>(m_signature_last, m__io, std::string("/types/vss2_variable/seq/2"));
             }
         }
     }
@@ -261,82 +237,106 @@ void edk2_vss2_t::vss2_variable_t::_clean_up() {
     }
 }
 
-bool edk2_vss2_t::vss2_variable_t::is_auth() {
-    if (f_is_auth)
-        return m_is_auth;
-    m_is_auth =  (( ((attributes()->auth_write()) || (attributes()->time_based_auth()) || (attributes()->append_write())) ) || ( ((len_name() == 0) || (len_data() == 0)) )) ;
-    f_is_auth = true;
-    return m_is_auth;
-}
-
-int8_t edk2_vss2_t::vss2_variable_t::len_standard_header() {
-    if (f_len_standard_header)
-        return m_len_standard_header;
-    m_len_standard_header = 32;
-    f_len_standard_header = true;
-    return m_len_standard_header;
+int32_t edk2_vss2_t::vss2_variable_t::end_offset() {
+    if (f_end_offset)
+        return m_end_offset;
+    f_end_offset = true;
+    m_end_offset = (int32_t)_io()->pos();
+    return m_end_offset;
 }
 
 int32_t edk2_vss2_t::vss2_variable_t::end_offset_auth() {
     if (f_end_offset_auth)
         return m_end_offset_auth;
-    m_end_offset_auth = (int32_t)_io()->pos();
     f_end_offset_auth = true;
+    m_end_offset_auth = (int32_t)_io()->pos();
     return m_end_offset_auth;
 }
 
-int32_t edk2_vss2_t::vss2_variable_t::len_alignment_padding() {
-    if (f_len_alignment_padding)
-        return m_len_alignment_padding;
-    m_len_alignment_padding = ((((end_offset() - offset()) + 3) & ~3) - (end_offset() - offset()));
-    f_len_alignment_padding = true;
-    return m_len_alignment_padding;
-}
-
-int8_t edk2_vss2_t::vss2_variable_t::len_auth_header() {
-    if (f_len_auth_header)
-        return m_len_auth_header;
-    m_len_auth_header = 60;
-    f_len_auth_header = true;
-    return m_len_auth_header;
-}
-
-int32_t edk2_vss2_t::vss2_variable_t::end_offset() {
-    if (f_end_offset)
-        return m_end_offset;
-    m_end_offset = (int32_t)_io()->pos();
-    f_end_offset = true;
-    return m_end_offset;
-}
-
-int32_t edk2_vss2_t::vss2_variable_t::len_alignment_padding_auth() {
-    if (f_len_alignment_padding_auth)
-        return m_len_alignment_padding_auth;
-    m_len_alignment_padding_auth = ((((end_offset_auth() - offset()) + 3) & ~3) - (end_offset_auth() - offset()));
-    f_len_alignment_padding_auth = true;
-    return m_len_alignment_padding_auth;
+bool edk2_vss2_t::vss2_variable_t::is_auth() {
+    if (f_is_auth)
+        return m_is_auth;
+    f_is_auth = true;
+    m_is_auth =  (( ((attributes()->auth_write()) || (attributes()->time_based_auth()) || (attributes()->append_write())) ) || ( ((len_name() == 0) || (len_data() == 0)) )) ;
+    return m_is_auth;
 }
 
 bool edk2_vss2_t::vss2_variable_t::is_valid() {
     if (f_is_valid)
         return m_is_valid;
-    m_is_valid =  ((state() == 127) || (state() == 63)) ;
     f_is_valid = true;
+    m_is_valid =  ((state() == 127) || (state() == 63)) ;
     return m_is_valid;
+}
+
+int32_t edk2_vss2_t::vss2_variable_t::len_alignment_padding() {
+    if (f_len_alignment_padding)
+        return m_len_alignment_padding;
+    f_len_alignment_padding = true;
+    m_len_alignment_padding = ((end_offset() - offset()) + 3 & ~3) - (end_offset() - offset());
+    return m_len_alignment_padding;
+}
+
+int32_t edk2_vss2_t::vss2_variable_t::len_alignment_padding_auth() {
+    if (f_len_alignment_padding_auth)
+        return m_len_alignment_padding_auth;
+    f_len_alignment_padding_auth = true;
+    m_len_alignment_padding_auth = ((end_offset_auth() - offset()) + 3 & ~3) - (end_offset_auth() - offset());
+    return m_len_alignment_padding_auth;
+}
+
+int8_t edk2_vss2_t::vss2_variable_t::len_auth_header() {
+    if (f_len_auth_header)
+        return m_len_auth_header;
+    f_len_auth_header = true;
+    m_len_auth_header = 60;
+    return m_len_auth_header;
+}
+
+int8_t edk2_vss2_t::vss2_variable_t::len_standard_header() {
+    if (f_len_standard_header)
+        return m_len_standard_header;
+    f_len_standard_header = true;
+    m_len_standard_header = 32;
+    return m_len_standard_header;
 }
 
 int32_t edk2_vss2_t::vss2_variable_t::offset() {
     if (f_offset)
         return m_offset;
-    m_offset = (int32_t)_io()->pos();
     f_offset = true;
+    m_offset = (int32_t)_io()->pos();
     return m_offset;
+}
+
+edk2_vss2_t::vss2_variable_attributes_t::vss2_variable_attributes_t(kaitai::kstream* p__io, edk2_vss2_t::vss2_variable_t* p__parent, edk2_vss2_t* p__root) : kaitai::kstruct(p__io) {
+    m__parent = p__parent;
+    m__root = p__root;
+    _read();
+}
+
+void edk2_vss2_t::vss2_variable_attributes_t::_read() {
+    m_non_volatile = m__io->read_bits_int_le(1);
+    m_boot_service = m__io->read_bits_int_le(1);
+    m_runtime = m__io->read_bits_int_le(1);
+    m_hw_error_record = m__io->read_bits_int_le(1);
+    m_auth_write = m__io->read_bits_int_le(1);
+    m_time_based_auth = m__io->read_bits_int_le(1);
+    m_append_write = m__io->read_bits_int_le(1);
+    m_reserved = m__io->read_bits_int_le(25);
+}
+
+edk2_vss2_t::vss2_variable_attributes_t::~vss2_variable_attributes_t() {
+    _clean_up();
+}
+
+void edk2_vss2_t::vss2_variable_attributes_t::_clean_up() {
 }
 
 int32_t edk2_vss2_t::len_vss2_store_header() {
     if (f_len_vss2_store_header)
         return m_len_vss2_store_header;
-    m_len_vss2_store_header = (7 * 4);
     f_len_vss2_store_header = true;
+    m_len_vss2_store_header = 7 * 4;
     return m_len_vss2_store_header;
 }

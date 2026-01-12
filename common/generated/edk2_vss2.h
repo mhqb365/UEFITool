@@ -2,21 +2,23 @@
 
 // This is a generated file! Please edit source .ksy file and use kaitai-struct-compiler to rebuild
 
+class edk2_vss2_t;
+
 #include "../kaitai/kaitaistruct.h"
 #include <stdint.h>
 #include <memory>
 #include <vector>
 
-#if KAITAI_STRUCT_VERSION < 9000L
-#error "Incompatible Kaitai Struct C++/STL API: version 0.9 or later is required"
+#if KAITAI_STRUCT_VERSION < 11000L
+#error "Incompatible Kaitai Struct C++/STL API: version 0.11 or later is required"
 #endif
 
 class edk2_vss2_t : public kaitai::kstruct {
 
 public:
     class vss2_store_body_t;
-    class vss2_variable_attributes_t;
     class vss2_variable_t;
+    class vss2_variable_attributes_t;
 
     edk2_vss2_t(kaitai::kstream* p__io, kaitai::kstruct* p__parent = nullptr, edk2_vss2_t* p__root = nullptr);
 
@@ -51,44 +53,6 @@ public:
         edk2_vss2_t* _parent() const { return m__parent; }
     };
 
-    class vss2_variable_attributes_t : public kaitai::kstruct {
-
-    public:
-
-        vss2_variable_attributes_t(kaitai::kstream* p__io, edk2_vss2_t::vss2_variable_t* p__parent = nullptr, edk2_vss2_t* p__root = nullptr);
-
-    private:
-        void _read();
-        void _clean_up();
-
-    public:
-        ~vss2_variable_attributes_t();
-
-    private:
-        bool m_non_volatile;
-        bool m_boot_service;
-        bool m_runtime;
-        bool m_hw_error_record;
-        bool m_auth_write;
-        bool m_time_based_auth;
-        bool m_append_write;
-        uint64_t m_reserved;
-        edk2_vss2_t* m__root;
-        edk2_vss2_t::vss2_variable_t* m__parent;
-
-    public:
-        bool non_volatile() const { return m_non_volatile; }
-        bool boot_service() const { return m_boot_service; }
-        bool runtime() const { return m_runtime; }
-        bool hw_error_record() const { return m_hw_error_record; }
-        bool auth_write() const { return m_auth_write; }
-        bool time_based_auth() const { return m_time_based_auth; }
-        bool append_write() const { return m_append_write; }
-        uint64_t reserved() const { return m_reserved; }
-        edk2_vss2_t* _root() const { return m__root; }
-        edk2_vss2_t::vss2_variable_t* _parent() const { return m__parent; }
-    };
-
     class vss2_variable_t : public kaitai::kstruct {
 
     public:
@@ -103,18 +67,11 @@ public:
         ~vss2_variable_t();
 
     private:
-        bool f_is_auth;
-        bool m_is_auth;
+        bool f_end_offset;
+        int32_t m_end_offset;
 
     public:
-        bool is_auth();
-
-    private:
-        bool f_len_standard_header;
-        int8_t m_len_standard_header;
-
-    public:
-        int8_t len_standard_header();
+        int32_t end_offset();
 
     private:
         bool f_end_offset_auth;
@@ -124,25 +81,25 @@ public:
         int32_t end_offset_auth();
 
     private:
+        bool f_is_auth;
+        bool m_is_auth;
+
+    public:
+        bool is_auth();
+
+    private:
+        bool f_is_valid;
+        bool m_is_valid;
+
+    public:
+        bool is_valid();
+
+    private:
         bool f_len_alignment_padding;
         int32_t m_len_alignment_padding;
 
     public:
         int32_t len_alignment_padding();
-
-    private:
-        bool f_len_auth_header;
-        int8_t m_len_auth_header;
-
-    public:
-        int8_t len_auth_header();
-
-    private:
-        bool f_end_offset;
-        int32_t m_end_offset;
-
-    public:
-        int32_t end_offset();
 
     private:
         bool f_len_alignment_padding_auth;
@@ -152,11 +109,18 @@ public:
         int32_t len_alignment_padding_auth();
 
     private:
-        bool f_is_valid;
-        bool m_is_valid;
+        bool f_len_auth_header;
+        int8_t m_len_auth_header;
 
     public:
-        bool is_valid();
+        int8_t len_auth_header();
+
+    private:
+        bool f_len_standard_header;
+        int8_t m_len_standard_header;
+
+    public:
+        int8_t len_standard_header();
 
     private:
         bool f_offset;
@@ -334,6 +298,44 @@ public:
         std::string alignment_padding() const { return m_alignment_padding; }
         edk2_vss2_t* _root() const { return m__root; }
         edk2_vss2_t::vss2_store_body_t* _parent() const { return m__parent; }
+    };
+
+    class vss2_variable_attributes_t : public kaitai::kstruct {
+
+    public:
+
+        vss2_variable_attributes_t(kaitai::kstream* p__io, edk2_vss2_t::vss2_variable_t* p__parent = nullptr, edk2_vss2_t* p__root = nullptr);
+
+    private:
+        void _read();
+        void _clean_up();
+
+    public:
+        ~vss2_variable_attributes_t();
+
+    private:
+        bool m_non_volatile;
+        bool m_boot_service;
+        bool m_runtime;
+        bool m_hw_error_record;
+        bool m_auth_write;
+        bool m_time_based_auth;
+        bool m_append_write;
+        uint64_t m_reserved;
+        edk2_vss2_t* m__root;
+        edk2_vss2_t::vss2_variable_t* m__parent;
+
+    public:
+        bool non_volatile() const { return m_non_volatile; }
+        bool boot_service() const { return m_boot_service; }
+        bool runtime() const { return m_runtime; }
+        bool hw_error_record() const { return m_hw_error_record; }
+        bool auth_write() const { return m_auth_write; }
+        bool time_based_auth() const { return m_time_based_auth; }
+        bool append_write() const { return m_append_write; }
+        uint64_t reserved() const { return m_reserved; }
+        edk2_vss2_t* _root() const { return m__root; }
+        edk2_vss2_t::vss2_variable_t* _parent() const { return m__parent; }
     };
 
 private:

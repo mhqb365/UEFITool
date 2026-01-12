@@ -289,7 +289,8 @@ USTATUS FitParser::parseFitEntryAcm(const UByteArray & acm, const UINT32 localOf
         
         // Check header version to be of a known value
         if (header->header_version() != intel_acm_t::KNOWN_HEADER_VERSION_V0_0
-            && header->header_version() != intel_acm_t::KNOWN_HEADER_VERSION_V3_0) {
+            && header->header_version() != intel_acm_t::KNOWN_HEADER_VERSION_V3_0
+            && header->header_version() != intel_acm_t::KNOWN_HEADER_VERSION_V5_4) {
             msg(usprintf("%s: Intel ACM with unknown header version %08Xh found", __FUNCTION__, header->header_version()), parent);
         }
         
