@@ -2423,7 +2423,7 @@ USTATUS FfsParser::parsePadFileBody(const UModelIndex & index)
         emptyByte = pdata->emptyByte;
     }
     
-    // Check if the while padding file is empty
+    // Check if the whole padding file is empty
     if (uniformByte(body) == emptyByte)
         return U_SUCCESS;
     
@@ -3518,7 +3518,7 @@ USTATUS FfsParser::parseDepexSectionBody(const UModelIndex & index)
                 // Check that the rest of depex has correct size
                 if ((UINT32)body.size() - (UINT32)(current - (const UINT8*)body.constData()) <= EFI_DEP_OPCODE_SIZE + sizeof(EFI_GUID)) {
                     parsed.clear();
-                    msg(usprintf("%s: remains of DEPEX section too short for PUSH opcode", __FUNCTION__), index);
+                    msg(usprintf("%s: the rest of DEPEX section too short for PUSH opcode", __FUNCTION__), index);
                     return U_SUCCESS;
                 }
                 guid = (const EFI_GUID*)(current + EFI_DEP_OPCODE_SIZE);
@@ -3588,7 +3588,7 @@ USTATUS FfsParser::parseAprioriRawSection(const UByteArray & body, UString & par
 {
     // Sanity check
     if (body.size() % sizeof(EFI_GUID)) {
-        msg(usprintf("%s: apriori file has size is not a multiple of 16", __FUNCTION__));
+        msg(usprintf("%s: apriori file has size that is not a multiple of 16", __FUNCTION__));
     }
     parsed.clear();
     UINT32 count = (UINT32)(body.size() / sizeof(EFI_GUID));
@@ -5808,7 +5808,7 @@ USTATUS FfsParser::pspParseISHDirectory(const UByteArray& amdImage, const UINT32
     const UINT32 dirOffset = pspDirectoryOffset(amdImage, tbl->L2Address);
     if (checksum != tbl->Checksum && dirOffset == UINT32_MAX) {
         if (!probe)
-            msg(usprintf("%s: Unknown directory table at offset %Xh", __FUNCTION__, offset), parent);
+            msg(usprintf("%s: unknown directory table at offset %Xh", __FUNCTION__, offset), parent);
         return U_INVALID_PARAMETER;
     }
 
@@ -6708,7 +6708,7 @@ USTATUS FfsParser::parseAMDImage(const UByteArray& amdImage, const UINT32 localO
         }
     }
     if (efsDescsList.empty()) {
-        msg(usprintf("%s: Firmware entry table not found", __FUNCTION__), parent);
+        // This is not an error to be reported here, as this is the way to stop parsing non-AMD images
         return U_ITEM_NOT_FOUND;
     }
 
