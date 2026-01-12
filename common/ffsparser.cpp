@@ -969,7 +969,9 @@ USTATUS FfsParser::parseRawArea(const UModelIndex & index)
                 // Show messages
                 if (itemSize != itemAltSize)
                     msg(usprintf("%s: volume size stored in header %Xh differs from calculated using block map %Xh", __FUNCTION__, itemSize, itemAltSize), volumeIndex);
-                result = parseVolumeBody(volumeIndex);
+                
+                // Parse volume body
+                parseVolumeBody(volumeIndex);
             }
         }
         else if (itemType == Types::Microcode) {
@@ -5689,7 +5691,7 @@ UString FfsParser::pspFileName(const UINT8 type, const UINT8 sub)
         case AMD_BIOS_PSP_SHARED_MEM:   fileName = "PSP shared memory descriptor"; break;
         case AMD_BIOS_L2_PTR:           fileName = "BIOS L2 directory"; break;
         // Unknown type
-        default:                        fileName = usprintf("??? Unknown type"); break;
+        default:                        fileName = usprintf("unknown"); break;
     }
 
     return fileName;
@@ -5826,7 +5828,7 @@ USTATUS FfsParser::pspParseComboEntries(const UByteArray& amdImage, const UINT32
     const Subtypes::DirectorySubtypes type = Subtypes::ComboDirectory;
 
     for (int i = 0; i < numEntries; i++) {
-        USTATUS result;
+        USTATUS result = U_ELEMENTS_NOT_FOUND;
         const UINT32 entryOffset = offset + headerSize + i * sizeof(AMD_PSP_COMBO_ENTRY);
         const AMD_PSP_COMBO_ENTRY& e = *(AMD_PSP_COMBO_ENTRY*)(amdImage.constData() + entryOffset);
 
@@ -5865,7 +5867,7 @@ USTATUS FfsParser::pspParseComboEntries(const UByteArray& amdImage, const UINT32
         }
         if (result != U_SUCCESS)
             if (!probe)
-                model->setName(entryIndex, model->name(entryIndex) + "??? Unknown directory table");
+                model->setName(entryIndex, model->name(entryIndex) + ": unknown directory table");
     }
     return U_SUCCESS;
 }
@@ -6462,7 +6464,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
                     }
                 }
             }
-            UString nameStr = nameDiff ? "??? Different types from multiple parents" : ref.name;
+            UString nameStr = nameDiff ? "Different types from multiple parents" : ref.name;
             if ((subDiff || ref.sub || instDiff || ref.inst) && !(subDiff && instDiff)) {
                 nameStr += " (" + UString(subDiff ? "*" : usprintf("%X", ref.sub)) + ":"
                     + UString(instDiff ? "*" : usprintf("%01X", ref.inst)) + ")";
@@ -6542,7 +6544,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
                     case AMD_EFS_BACKUP: {
                         auto pspMaxOffsetSave = pspMaxOffset;
                         auto pspFilesListSave = pspFilesList;
-                        result = pspParseEFStructure(amdImage.mid(f->offset, f->size), 0, childIndex, dumbIndex);
+                        pspParseEFStructure(amdImage.mid(f->offset, f->size), 0, childIndex, dumbIndex);
                         pspMaxOffset = pspMaxOffsetSave;
                         pspFilesList = pspFilesListSave;
                     } break;
@@ -6661,7 +6663,7 @@ USTATUS FfsParser::parseAMDImage(const UByteArray& amdImage, const UINT32 localO
         efsDescsList.push_back({ UINT32_MAX, bankOffsetLast + bankSizeLast, (UINT32)amdImage.size() - bankOffsetLast - bankSizeLast });
 
     // Finally, try to detect/correct bank size
-    bankSize = 0;
+    bankSize = 1;
     for (int i = 0; i < efsDescsList.size(); i++) {
         UINT32 currentSize = efsDescsList.at(i).size;
         if (bankSize < currentSize)

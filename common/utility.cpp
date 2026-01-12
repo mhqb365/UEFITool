@@ -598,21 +598,20 @@ USTATUS brotliDecompress(const UByteArray& input, UByteArray& output)
     if (decoder == nullptr)
         return U_BROTLI_DECOMPRESSION_FAILED;
 
-    BROTLI_BOOL ret_param = BrotliDecoderSetParameter(decoder, BROTLI_DECODER_PARAM_LARGE_WINDOW, 1);
-    if (ret_param == BROTLI_FALSE)
-        return U_BROTLI_DECOMPRESSION_FAILED;
-
     BrotliDecoderResult ret = BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT;
-    while (ret == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
-        uint8_t out[0x1000] = {};
-        uint8_t *next_out = out;
-        size_t avail_out = sizeof(out);
-
-        ret = BrotliDecoderDecompressStream(decoder, &avail_in, &next_in, &avail_out, &next_out, NULL);
-        if ((ret == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT || ret == BROTLI_DECODER_RESULT_SUCCESS) && avail_out != sizeof(out))
-            output += UByteArray((char*)out, sizeof(out) - avail_out);
+    BROTLI_BOOL ret_param = BrotliDecoderSetParameter(decoder, BROTLI_DECODER_PARAM_LARGE_WINDOW, 1);
+    if (ret_param != BROTLI_FALSE) {
+        while (ret == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT) {
+            uint8_t out[0x1000] = {};
+            uint8_t *next_out = out;
+            size_t avail_out = sizeof(out);
+            
+            ret = BrotliDecoderDecompressStream(decoder, &avail_in, &next_in, &avail_out, &next_out, NULL);
+            if ((ret == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT || ret == BROTLI_DECODER_RESULT_SUCCESS) && avail_out != sizeof(out))
+                output += UByteArray((char*)out, sizeof(out) - avail_out);
+        }
     }
-
+    
     BrotliDecoderDestroyInstance(decoder);
 
     return ret == BROTLI_DECODER_RESULT_SUCCESS ? U_SUCCESS : U_BROTLI_DECOMPRESSION_FAILED;
