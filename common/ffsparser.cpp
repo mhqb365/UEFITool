@@ -45,7 +45,8 @@
 
 // Constructor
 FfsParser::FfsParser(TreeModel* treeModel) : model(treeModel),
-imageBase(0), addressDiff(0x100000000ULL), protectedRegionsBase(0), pspSpiRomBase(0) {
+imageBase(0), addressDiff(0x100000000ULL), protectedRegionsBase(0),
+pspSpiRomBase(0), pspMaxOffset(0) {
     fitParser = new FitParser(treeModel, this);
     nvramParser = new NvramParser(treeModel, this);
     meParser = new MeParser(treeModel, this);
