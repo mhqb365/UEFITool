@@ -300,6 +300,48 @@
     <property name="title">
      <string>&amp;Action</string>
     </property>
+    <widget class="QMenu" name="menuHashActions">
+     <property name="title">
+      <string>&amp;Hash</string>
+     </property>
+     <addaction name="actionHashCrc32"/>
+     <addaction name="separator"/>
+     <addaction name="actionHashSha1"/>
+     <addaction name="separator"/>
+     <addaction name="actionHashSha256"/>
+     <addaction name="actionHashSha384"/>
+     <addaction name="actionHashSha512"/>
+     <addaction name="separator"/>
+     <addaction name="actionHashSm3"/>
+    </widget>
+    <widget class="QMenu" name="menuHashBodyActions">
+     <property name="title">
+      <string>Hash &amp;body</string>
+     </property>
+     <addaction name="actionBodyHashCrc32"/>
+     <addaction name="separator"/>
+     <addaction name="actionBodyHashSha1"/>
+     <addaction name="separator"/>
+     <addaction name="actionBodyHashSha256"/>
+     <addaction name="actionBodyHashSha384"/>
+     <addaction name="actionBodyHashSha512"/>
+     <addaction name="separator"/>
+     <addaction name="actionBodyHashSm3"/>
+    </widget>
+    <widget class="QMenu" name="menuHashUncompressedActions">
+     <property name="title">
+      <string>Hash &amp;uncompressed</string>
+     </property>
+     <addaction name="actionUncompressedHashCrc32"/>
+     <addaction name="separator"/>
+     <addaction name="actionUncompressedHashSha1"/>
+     <addaction name="separator"/>
+     <addaction name="actionUncompressedHashSha256"/>
+     <addaction name="actionUncompressedHashSha384"/>
+     <addaction name="actionUncompressedHashSha512"/>
+     <addaction name="separator"/>
+     <addaction name="actionUncompressedHashSm3"/>
+    </widget>
     <widget class="QMenu" name="menuCapsuleActions">
      <property name="title">
       <string>&amp;Capsule</string>
@@ -308,6 +350,9 @@
      <addaction name="actionBodyHexView"/>
      <addaction name="actionUncompressedHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
+     <addaction name="menuHashBodyActions"/>
+     <addaction name="menuHashUncompressedActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
      <addaction name="actionExtractBody"/>
@@ -318,6 +363,7 @@
      </property>
      <addaction name="actionHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
     </widget>
@@ -327,6 +373,7 @@
      </property>
      <addaction name="actionHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
      <addaction name="separator"/>
@@ -340,6 +387,7 @@
      </property>
      <addaction name="actionHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
     </widget>
@@ -351,6 +399,9 @@
      <addaction name="actionBodyHexView"/>
      <addaction name="actionUncompressedHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
+     <addaction name="menuHashBodyActions"/>
+     <addaction name="menuHashUncompressedActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
      <addaction name="actionExtractBody"/>
@@ -370,6 +421,9 @@
      <addaction name="actionBodyHexView"/>
      <addaction name="actionUncompressedHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
+     <addaction name="menuHashBodyActions"/>
+     <addaction name="menuHashUncompressedActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
      <addaction name="actionExtractBody"/>
@@ -393,6 +447,9 @@
      <addaction name="actionBodyHexView"/>
      <addaction name="actionUncompressedHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
+     <addaction name="menuHashBodyActions"/>
+     <addaction name="menuHashUncompressedActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
      <addaction name="actionExtractBody"/>
@@ -429,6 +486,9 @@
      <addaction name="actionBodyHexView"/>
      <addaction name="actionUncompressedHexView"/>
      <addaction name="separator"/>
+     <addaction name="menuHashActions"/>
+     <addaction name="menuHashBodyActions"/>
+     <addaction name="menuHashUncompressedActions"/>
      <addaction name="separator"/>
      <addaction name="actionGoToData"/>
      <addaction name="separator"/>
@@ -449,48 +509,6 @@
      <property name="title">
       <string>S&amp;tore</string>
      </property>
-     <widget class="QMenu" name="menuHashActions">
-      <property name="title">
-       <string>&amp;Hash</string>
-      </property>
-      <addaction name="actionHashCrc32"/>
-      <addaction name="separator"/>
-      <addaction name="actionHashSha1"/>
-      <addaction name="separator"/>
-      <addaction name="actionHashSha256"/>
-      <addaction name="actionHashSha384"/>
-      <addaction name="actionHashSha512"/>
-      <addaction name="separator"/>
-      <addaction name="actionHashSm3"/>
-     </widget>
-     <widget class="QMenu" name="menuHashBodyActions">
-      <property name="title">
-       <string>Hash &amp;body</string>
-      </property>
-      <addaction name="actionBodyHashCrc32"/>
-      <addaction name="separator"/>
-      <addaction name="actionBodyHashSha1"/>
-      <addaction name="separator"/>
-      <addaction name="actionBodyHashSha256"/>
-      <addaction name="actionBodyHashSha384"/>
-      <addaction name="actionBodyHashSha512"/>
-      <addaction name="separator"/>
-      <addaction name="actionBodyHashSm3"/>
-     </widget>
-     <widget class="QMenu" name="menuHashUncompressedActions">
-      <property name="title">
-       <string>Hash &amp;uncompressed</string>
-      </property>
-      <addaction name="actionUncompressedHashCrc32"/>
-      <addaction name="separator"/>
-      <addaction name="actionUncompressedHashSha1"/>
-      <addaction name="separator"/>
-      <addaction name="actionUncompressedHashSha256"/>
-      <addaction name="actionUncompressedHashSha384"/>
-      <addaction name="actionUncompressedHashSha512"/>
-      <addaction name="separator"/>
-      <addaction name="actionUncompressedHashSm3"/>
-     </widget>
      <addaction name="actionHexView"/>
      <addaction name="actionBodyHexView"/>
      <addaction name="actionUncompressedHexView"/>
