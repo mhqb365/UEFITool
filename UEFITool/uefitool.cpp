@@ -145,9 +145,6 @@ markingEnabled(true)
     
     // Read stored settings
     readSettings();
-
-    // Update recent files list in menu
-    updateRecentFilesMenu();
 }
 
 UEFITool::~UEFITool()
@@ -1381,6 +1378,9 @@ void UEFITool::readSettings()
     QFont hexFont = currentFont;
     hexFont.setStretch(QFont::SemiCondensed);
     selectedHexView.setFont(hexFont);
+    
+    // Update recent files list in menu
+    updateRecentFilesMenu();
 }
 
 void UEFITool::writeSettings()

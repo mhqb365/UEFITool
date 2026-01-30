@@ -70,6 +70,8 @@ public:
     void openImageFile(QString path);
     void setProgramPath(QString path) { currentProgramPath = path; }
 
+    void readSettings();
+    
 private slots:
     void init();
     void populateUi(const QItemSelection &selected);
@@ -164,7 +166,7 @@ private slots:
 #if QT_VERSION_MAJOR >= 6 && QT_VERSION_MINOR >= 5
     void updateUiForNewColorScheme(Qt::ColorScheme scheme);
 #endif
-
+    
 private:
     Ui::UEFITool* ui;
     TreeModel* model;
@@ -198,7 +200,6 @@ private:
     void dropEvent(QDropEvent* event);
     void contextMenuEvent(QContextMenuEvent* event);
     void updateRecentFilesMenu(const QString& fileName = QString());
-    void readSettings();
     bool checkDock(QDockWidget* const dock);
     void showParserMessages();
     void showFinderMessages();

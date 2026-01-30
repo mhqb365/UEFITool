@@ -53,6 +53,7 @@ public:
         if (arguments().length() > 1)
             tool->openImageFile(arguments().at(1));
         tool->show();
+        tool->readSettings();
         
         return exec();
     }
