@@ -2701,14 +2701,14 @@ USTATUS FfsParser::parseSectionHeader(const UByteArray & section, const UINT32 l
     
     const EFI_COMMON_SECTION_HEADER* sectionHeader = (const EFI_COMMON_SECTION_HEADER*)(section.constData());
     switch (sectionHeader->Type) {
-            // Special
+        // Special
         case EFI_SECTION_COMPRESSION:           return parseCompressedSectionHeader(section, localOffset, parent, index, probe);
         case EFI_SECTION_GUID_DEFINED:          return parseGuidedSectionHeader(section, localOffset, parent, index, probe);
         case EFI_SECTION_FREEFORM_SUBTYPE_GUID: return parseFreeformGuidedSectionHeader(section, localOffset, parent, index, probe);
         case EFI_SECTION_VERSION:               return parseVersionSectionHeader(section, localOffset, parent, index, probe);
         case PHOENIX_SECTION_POSTCODE:
         case INSYDE_SECTION_POSTCODE:           return parsePostcodeSectionHeader(section, localOffset, parent, index, probe);
-            // Common
+        // Common
         case EFI_SECTION_DISPOSABLE:
         case EFI_SECTION_DXE_DEPEX:
         case EFI_SECTION_PEI_DEPEX:
@@ -2720,7 +2720,7 @@ USTATUS FfsParser::parseSectionHeader(const UByteArray & section, const UINT32 l
         case EFI_SECTION_USER_INTERFACE:
         case EFI_SECTION_FIRMWARE_VOLUME_IMAGE:
         case EFI_SECTION_RAW:                   return parseCommonSectionHeader(section, localOffset, parent, index, probe);
-            // Unknown
+        // Unknown
         default:
             USTATUS result = parseCommonSectionHeader(section, localOffset, parent, index, probe);
             if (!probe)

@@ -553,6 +553,8 @@
     </property>
     <addaction name="actionToggleBootGuardMarking"/>
     <addaction name="separator"/>
+    <addaction name="actionResetDocks"/>
+    <addaction name="separator"/>
     <addaction name="actionCopyItemName"/>
     <addaction name="separator"/>
     <addaction name="actionExpandItemRecursively"/>
@@ -1090,6 +1092,11 @@
    </property>
    <property name="text">
     <string>SM3</string>
+   </property>
+  </action>
+  <action name="actionResetDocks">
+   <property name="text">
+    <string>&amp;Reset docks</string>
    </property>
   </action>
  </widget>

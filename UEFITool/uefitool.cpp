@@ -121,6 +121,7 @@ markingEnabled(true)
     connect(ui->actionUncompressedHashSha384, SIGNAL(triggered()), this, SLOT(hashUncompressedSha384()));
     connect(ui->actionUncompressedHashSha512, SIGNAL(triggered()), this, SLOT(hashUncompressedSha512()));
     connect(ui->actionUncompressedHashSm3, SIGNAL(triggered()), this, SLOT(hashUncompressedSm3()));
+    connect(ui->actionResetDocks, SIGNAL(triggered()), this, SLOT(resetDocks()));
     for (auto dock : findChildren<QDockWidget*>()) {
         connect(dock, SIGNAL(topLevelChanged(bool)), this, SLOT(onDockStateChange(bool)));
         connect(dock, SIGNAL(visibilityChanged(bool)), this, SLOT(onDockStateChange(bool)));
