@@ -1,7 +1,7 @@
 #include "amd_microcode.h"
 #include "basetypes.h"
 
-UINT32 getDataSizeMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
+UINT32 amdMicrocodeGetDataSize(const AMD_MICROCODE_HEADER *ucodeHeader) {
     if (ucodeHeader->LoaderID >= 0x8005) {
         return ((ucodeHeader->InitializationFlag << 8) | ucodeHeader->DataSize) * 0x10;
     }
@@ -9,9 +9,9 @@ UINT32 getDataSizeMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
     return ucodeHeader->DataSize;
 }
 
-UINT32 getSizeMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
-    UINT32 microcodeDataLen = getDataSizeMicrocodeAmd(ucodeHeader);
-    UINT32 cpuIdByte = (getCpuIdMicrocodeAmd(ucodeHeader) >> 16) & 0xFF;
+UINT32 amdMicrocodeGetSize(const AMD_MICROCODE_HEADER *ucodeHeader) {
+    UINT32 microcodeDataLen = amdMicrocodeGetDataSize(ucodeHeader);
+    UINT32 cpuIdByte = (amdMicrocodeGetCpuId(ucodeHeader) >> 16) & 0xFF;
     UINT32 microcodeLen = 0;
 
     if (microcodeDataLen == 0x20) {
@@ -41,13 +41,13 @@ UINT32 getSizeMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
     return microcodeLen;
 }
 
-UINT32 getCpuIdMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
+UINT32 amdMicrocodeGetCpuId(const AMD_MICROCODE_HEADER *ucodeHeader) {
     return (((ucodeHeader->ProcessorSignature >> 8) & 0xFF) << 16) | (0x0f << 8) |
            (ucodeHeader->ProcessorSignature & 0xff);
 }
 
-UINT16 getYearMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
-    if (getCpuIdMicrocodeAmd(ucodeHeader) == 0x00800F11 && ucodeHeader->UpdateRevision == 0x8001105 &&
+UINT16 amdMicrocodeGetYear(const AMD_MICROCODE_HEADER *ucodeHeader) {
+    if (amdMicrocodeGetCpuId(ucodeHeader) == 0x00800F11 && ucodeHeader->UpdateRevision == 0x8001105 &&
         ucodeHeader->DateYear == 0x2016) {
         return 0x2017;
     }
@@ -55,11 +55,11 @@ UINT16 getYearMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
     return ucodeHeader->DateYear;
 }
 
-UINT8 getMonthMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
-    if (getCpuIdMicrocodeAmd(ucodeHeader) == 0x00300F10 && ucodeHeader->UpdateRevision == 0x3000027 &&
+UINT8 amdMicrocodeGetMonth(const AMD_MICROCODE_HEADER *ucodeHeader) {
+    if (amdMicrocodeGetCpuId(ucodeHeader) == 0x00300F10 && ucodeHeader->UpdateRevision == 0x3000027 &&
         ucodeHeader->DateMonth == 0x13) {
         return 0x12;
-    } else if (getCpuIdMicrocodeAmd(ucodeHeader) == 0x00730F01 && ucodeHeader->UpdateRevision == 0x7030106 &&
+    } else if (amdMicrocodeGetCpuId(ucodeHeader) == 0x00730F01 && ucodeHeader->UpdateRevision == 0x7030106 &&
                ucodeHeader->DateMonth == 0x09) {
         return 0x02;
     }
@@ -67,8 +67,8 @@ UINT8 getMonthMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
     return ucodeHeader->DateMonth;
 }
 
-UINT8 getDayMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader) {
-    if (getCpuIdMicrocodeAmd(ucodeHeader) == 0x00730F01 && ucodeHeader->UpdateRevision == 0x7030106 &&
+UINT8 amdMicrocodeGetDay(const AMD_MICROCODE_HEADER *ucodeHeader) {
+    if (amdMicrocodeGetCpuId(ucodeHeader) == 0x00730F01 && ucodeHeader->UpdateRevision == 0x7030106 &&
         ucodeHeader->DateDay == 0x02) {
         return 0x09;
     }

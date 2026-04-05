@@ -29,12 +29,12 @@ typedef struct AMD_MICROCODE_HEADER_ {
     UINT8  Reserved_1F;
 } AMD_MICROCODE_HEADER;
 
-UINT32 getDataSizeMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader);
-UINT32 getSizeMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader);
-UINT32 getCpuIdMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader);
-UINT16 getYearMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader);
-UINT8  getMonthMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader);
-UINT8  getDayMicrocodeAmd(const AMD_MICROCODE_HEADER *ucodeHeader);
+UINT32 amdMicrocodeGetDataSize(const AMD_MICROCODE_HEADER *ucodeHeader);
+UINT32 amdMicrocodeGetSize(const AMD_MICROCODE_HEADER *ucodeHeader);
+UINT32 amdMicrocodeGetCpuId(const AMD_MICROCODE_HEADER *ucodeHeader);
+UINT16 amdMicrocodeGetYear(const AMD_MICROCODE_HEADER *ucodeHeader);
+UINT8  amdMicrocodeGetMonth(const AMD_MICROCODE_HEADER *ucodeHeader);
+UINT8  amdMicrocodeGetDay(const AMD_MICROCODE_HEADER *ucodeHeader);
 
 #pragma pack(pop)
 

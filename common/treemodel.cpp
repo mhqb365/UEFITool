@@ -532,6 +532,11 @@ UModelIndex TreeModel::addItem(const UINT32 offset, const UINT8 type, const UINT
         }
     }
     
+    // Verify that the item has at least a single byte between its header, body and tail
+    if (header.isEmpty() && body.isEmpty() && tail.isEmpty()) {
+        return UModelIndex();
+    }
+    
     TreeItem *newItem = new TreeItem(offset, type, subtype, name, text, info, header, body, tail, Movable, this->compressed(parent), parentItem);
     
     if (mode == CREATE_MODE_APPEND) {

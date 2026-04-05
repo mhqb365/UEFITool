@@ -348,11 +348,11 @@ void UEFITool::populateUi(const QModelIndex &current)
     // Set info text
     ui->infoEdit->setPlainText(model->info(current));
     enableDock(ui->infoDock, true);
-
+    
     // Set Hex view
     selectedHexView.clearMetadata();
     selectedHexView.setBackground(0, model->header(current).size(),
-        model->markingDarkMode() ? Qt::darkGreen : Qt::green);
+                                  model->markingDarkMode() ? Qt::darkGreen : Qt::green);
     selectedHexView.setData(model->entire(current));
     enableDock(ui->hexViewDock, true);
     
@@ -364,7 +364,7 @@ void UEFITool::populateUi(const QModelIndex &current)
     ui->menuVolumeActions->setEnabled(type == Types::Volume);
     ui->menuFileActions->setEnabled(type == Types::File);
     ui->menuSectionActions->setEnabled(type == Types::Section);
-    ui->menuEntryActions->setEnabled(type == Types::Microcode
+    ui->menuEntryActions->setEnabled(type == Types::IntelMicrocode
                                      || type == Types::SlicData
                                      || type == Types::NvarEntry
                                      || type == Types::VssEntry
@@ -384,6 +384,7 @@ void UEFITool::populateUi(const QModelIndex &current)
                                      || type == Types::CpdExtension
                                      || type == Types::CpdSpiEntry
                                      || type == Types::StartupApDataEntry
+                                     || type == Types::AmdMicrocode
                                      );
     ui->menuStoreActions->setEnabled(type == Types::VssStore
                                      || type == Types::Vss2Store

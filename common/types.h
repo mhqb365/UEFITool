@@ -61,7 +61,7 @@ namespace Types {
         PhoenixFlashMapEntry,
         InsydeFlashDeviceMapEntry,
         DellDvarEntry,
-        Microcode,
+        IntelMicrocode,
         SlicData,
         IfwiHeader,
         IfwiPartition,
@@ -79,6 +79,7 @@ namespace Types {
         StartupApDataEntry,
         DirectoryTable,
         DirectoryTableEntry,
+        AmdMicrocode,
     };
 }
 
@@ -101,10 +102,11 @@ namespace Subtypes {
         Ffs2Volume,
         Ffs3Volume,
         NvramVolume,
-        MicrocodeVolume,
+        AppleMicrocodeVolume,
     };
 
     enum RegionSubtypes {
+        // Intel
         DescriptorRegion = 0,
         BiosRegion,
         MeRegion,
@@ -121,6 +123,7 @@ namespace Subtypes {
         Reserved1Region,
         Reserved2Region,
         PttRegion,
+        // AMD
         PspL1DirectoryRegion,
         PspL2DirectoryRegion,
         PspDirectoryFile,
@@ -192,7 +195,7 @@ namespace Subtypes {
         MarkerSlicData,
     };
 
-    // ME-specific
+    // Intel ME-specific
     enum IfwiPartitionSubtypes {
         DataIfwiPartition = 210,
         BootIfwiPartition,

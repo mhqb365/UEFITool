@@ -125,7 +125,7 @@ USTATUS FitParser::parseFit(const UModelIndex & index)
         if ((currentEntry->Type == INTEL_FIT_TYPE_TXT_POLICY || currentEntry->Type == INTEL_FIT_TYPE_TPM_POLICY)
             && currentEntry->Version == 0) {
             const INTEL_FIT_INDEX_IO_ADDRESS* policy = (const INTEL_FIT_INDEX_IO_ADDRESS*)currentEntry;
-            info += usprintf("Index: %04Xh, BitPosition: %02Xh, AccessWidth: %02Xh, DataRegAddr: %04Xh, IndexRegAddr: %04Xh",
+            info = usprintf("Index: %04Xh, BitPosition: %02Xh, AccessWidth: %02Xh, DataRegAddr: %04Xh, IndexRegAddr: %04Xh",
                              policy->Index,
                              policy->BitPosition,
                              policy->AccessWidthInBytes,
@@ -265,7 +265,7 @@ USTATUS FitParser::parseFitEntryMicrocode(const UByteArray & microcode, const UI
     }
     
     const INTEL_MICROCODE_HEADER* ucodeHeader = (const INTEL_MICROCODE_HEADER*)(microcode.constData() + localOffset);
-    if (!ffsParser->microcodeHeaderValid(ucodeHeader)) {
+    if (!ffsParser->intelMicrocodeHeaderValid(ucodeHeader)) {
         return U_INVALID_MICROCODE;
     }
     

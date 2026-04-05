@@ -74,7 +74,7 @@ UString itemTypeToUString(const UINT8 type)
         case Types::PhoenixFlashMapEntry:       return UString("FlashMap entry");
         case Types::InsydeFlashDeviceMapEntry:  return UString("FlashDeviceMap entry");
         case Types::DellDvarEntry:              return UString("DVAR entry");
-        case Types::Microcode:                  return UString("Microcode");
+        case Types::IntelMicrocode:             return UString("Intel microcode");
         case Types::SlicData:                   return UString("SLIC data");
         case Types::FptStore:                   return UString("FPT store");
         case Types::FptEntry:                   return UString("FPT entry");
@@ -92,6 +92,7 @@ UString itemTypeToUString(const UINT8 type)
         case Types::StartupApDataEntry:         return UString("Startup AP data");
         case Types::DirectoryTable:             return UString("Table");
         case Types::DirectoryTableEntry:        return UString("Table entry");
+        case Types::AmdMicrocode:               return UString("AMD microcode");
     }
     
     return usprintf("Unknown %02Xh", type);
@@ -115,7 +116,7 @@ UString itemSubtypeToUString(const UINT8 type, const UINT8 subtype)
             else if (subtype == Subtypes::Ffs2Volume)                   return UString("FFSv2");
             else if (subtype == Subtypes::Ffs3Volume)                   return UString("FFSv3");
             else if (subtype == Subtypes::NvramVolume)                  return UString("NVRAM");
-            else if (subtype == Subtypes::MicrocodeVolume)              return UString("Microcode");
+            else if (subtype == Subtypes::AppleMicrocodeVolume)         return UString("Apple microcode");
             break;
         case Types::Capsule:
             if      (subtype == Subtypes::AptioSignedCapsule)           return UString("Aptio signed");
@@ -161,10 +162,6 @@ UString itemSubtypeToUString(const UINT8 type, const UINT8 subtype)
             else if (subtype == Subtypes::NamespaceGuidDvarEntry)       return UString("NamespaceGuid");
             else if (subtype == Subtypes::NameIdDvarEntry)              return UString("NameId");
             else if (subtype == Subtypes::UnknownDvarEntry)             return UString("Unknown");
-            break;
-        case Types::Microcode:
-            if      (subtype == Subtypes::IntelMicrocode)               return UString("Intel");
-            else if (subtype == Subtypes::AmdMicrocode)                 return UString("AMD");
             break;
         case Types::FptEntry:
             if      (subtype == Subtypes::ValidFptEntry)                return UString("Valid");

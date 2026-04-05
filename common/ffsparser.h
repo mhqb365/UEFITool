@@ -204,11 +204,11 @@ private:
     UINT32  getSectionSize(const UByteArray & file, const UINT32 sectionOffset, const UINT8 ffsVersion);
     
     USTATUS parseIntelMicrocodeHeader(const UByteArray & store, const UINT32 localOffset, const UModelIndex & parent, UModelIndex & index);
-    bool microcodeHeaderValid(const INTEL_MICROCODE_HEADER* ucodeHeader);
+    bool intelMicrocodeHeaderValid(const INTEL_MICROCODE_HEADER* ucodeHeader);
 
     USTATUS searchForAmdMicrocode(const UModelIndex & index);
     USTATUS parseAmdMicrocodeHeader(const UByteArray & store, const UINT32 localOffset, const UModelIndex & parent, UModelIndex & index);
-    bool microcodeHeaderValidAmd(const AMD_MICROCODE_HEADER* ucodeHeader);
+    bool amdMicrocodeHeaderValid(const AMD_MICROCODE_HEADER* ucodeHeader);
 
     USTATUS parseVendorHashFile(const UByteArray & fileGuid, const UModelIndex & index);
 
