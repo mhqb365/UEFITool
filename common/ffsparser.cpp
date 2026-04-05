@@ -134,12 +134,15 @@ USTATUS FfsParser::parseImage(const UByteArray& buffer, const UINT32 localOffset
     // Try parsing as Intel image
     USTATUS result = parseIntelImage(buffer, localOffset, parent, index);
     if (U_SUCCESS != result) {
+        result = parseGenericImage(buffer, localOffset, parent, index);
+        
+        // TODO: re-enable once AMD parser will be fixed to uphold the base-offset-size pre- and post-conditions
         // Try parsing as AMD image
-        result = parseAMDImage(buffer, localOffset, parent, index);
-        if (U_SUCCESS != result) {
-            // Parse as generic UEFI image or file
-            result = parseGenericImage(buffer, localOffset, parent, index);
-        }
+        //result = parseAMDImage(buffer, localOffset, parent, index);
+        //if (U_SUCCESS != result) {
+        //    // Parse as generic UEFI image or file
+        //    result = parseGenericImage(buffer, localOffset, parent, index);
+        //}
     }
     
     return result;
