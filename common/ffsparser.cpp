@@ -6791,7 +6791,7 @@ USTATUS FfsParser::pspParseEFStructure(const UByteArray & amdImage, const UINT32
             fetRawSize = fetUpdSize;
             fetTailSize = 0;
         }
-        UString fetInfo = usprintf("Maximum PSP offset: %" PRIX64 "Xh\n", pspMaxOffset - 1);
+        UString fetInfo = usprintf("Maximum PSP offset: %" PRIX64 "h\n", pspMaxOffset - 1);
         if (fetRawSize < sizeof(AMD_EMBEDDED_FIRMWARE)) {
             if (fetEndMarker == 1)
                 fetInfo += "Stripped by " + fetStrippedBy;
