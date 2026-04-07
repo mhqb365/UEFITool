@@ -914,7 +914,7 @@
     <string>&amp;Copy item name</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+C</string>
+    <string>Ctrl+Shift+T</string>
    </property>
   </action>
   <action name="actionExpandItemRecursively">
