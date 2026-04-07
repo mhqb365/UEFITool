@@ -710,7 +710,6 @@ USTATUS FfsParser::parseMeRegion(const UByteArray & me, const UINT32 localOffset
     UString info;
     
     // Parse region
-    bool versionFound = true;
     bool emptyRegion = false;
     // Check for empty region
     auto c = uniformByte(me);
@@ -719,35 +718,6 @@ USTATUS FfsParser::parseMeRegion(const UByteArray & me, const UINT32 localOffset
         emptyRegion = true;
         info = usprintf("State: empty (%02Xh)", (UINT8)c);
     }
-    else {
-        // Search for new signature
-        UINT32 sig2Value = ME_VERSION_SIGNATURE2;
-        UByteArray sig2((const char*)&sig2Value, sizeof(sig2Value));
-        INT32 versionOffset = (INT32)me.indexOf(sig2);
-        if (versionOffset < 0) { // New signature not found
-            // Search for old signature
-            UINT32 sigValue = ME_VERSION_SIGNATURE;
-            UByteArray sig((const char*)&sigValue, sizeof(sigValue));
-            versionOffset = (INT32)me.indexOf(sig);
-            if (versionOffset < 0) {
-                info = UString("Version: unknown");
-                versionFound = false;
-            }
-        }
-        
-        // Add version information
-        if (versionFound) {
-            if ((UINT32)me.size() < (UINT32)versionOffset + sizeof(ME_VERSION))
-                return U_INVALID_REGION;
-        
-            const ME_VERSION* version = (const ME_VERSION*)(me.constData() + versionOffset);
-            info = usprintf("Version: %u.%u.%u.%u",
-                             version->Major,
-                             version->Minor,
-                             version->Bugfix,
-                             version->Build);
-        }
-    }
     
     // Add tree item
     index = model->addItem(localOffset, Types::Region, Subtypes::MeRegion, name, UString(), info, UByteArray(), me, UByteArray(), Fixed, parent);
@@ -755,9 +725,6 @@ USTATUS FfsParser::parseMeRegion(const UByteArray & me, const UINT32 localOffset
     // Show messages
     if (emptyRegion) {
         msg(usprintf("%s: ME region is empty", __FUNCTION__), index);
-    }
-    else if (!versionFound) {
-        msg(usprintf("%s: ME version is unknown, it might be damaged", __FUNCTION__), index);
     }
     else {
         meParser->parseMeRegionBody(index);
@@ -982,7 +949,8 @@ USTATUS FfsParser::parseRawArea(const UModelIndex & index)
             
             // Parse BPDT region
             UModelIndex bpdtPtIndex;
-            result = parseBpdtRegion(bpdtStore, 0, 0, bpdtIndex, bpdtPtIndex);
+            UString meVersion;
+            result = parseBpdtRegion(bpdtStore, 0, 0, bpdtIndex, bpdtPtIndex, meVersion);
             if (result) {
                 msg(usprintf("%s: BPDT store parsing failed with error ", __FUNCTION__) + errorCodeToUString(result), index);
             }
@@ -2197,24 +2165,31 @@ USTATUS FfsParser::parseFileHeader(const UByteArray & file, const UINT32 localOf
     }
     
     // Get file body
-    UByteArray body = file.mid(header.size());
-
-    if (body.size() < sizeof(UINT16)) {
-        return U_INVALID_FILE;
+    UByteArray body;
+    // Zero-body-sized files are OK per UEFI PI spec
+    if (file.size() > header.size()) {
+        body = file.mid(header.size());
     }
-
+    
     // Check for file tail presence
     UByteArray tail;
     bool msgInvalidTailValue = false;
+    bool msgTailedFileTooSmall = false;
     if (volumeRevision == 1 && (fileHeader->Attributes & FFS_ATTRIB_TAIL_PRESENT)) {
-        //Check file tail;
-        UINT16 tailValue = *(UINT16*)body.right(sizeof(UINT16)).constData();
-        if (fileHeader->IntegrityCheck.TailReference != (UINT16)~tailValue)
-            msgInvalidTailValue = true;
-        
-        // Get tail and remove it from file body
-        tail = body.right(sizeof(UINT16));
-        body = body.left(body.size() - sizeof(UINT16));
+        // Check if the file actually has at least 2 bytes of body
+        if (body.size() < sizeof(UINT16)) {
+            msgTailedFileTooSmall = true;
+        }
+        else {
+            // Check file tail;
+            UINT16 tailValue = *(UINT16*)body.right(sizeof(UINT16)).constData();
+            if (fileHeader->IntegrityCheck.TailReference != (UINT16)~tailValue)
+                msgInvalidTailValue = true;
+            
+            // Get tail and remove it from file body
+            tail = body.right(sizeof(UINT16));
+            body = body.left(body.size() - sizeof(UINT16));
+        }
     }
     
     // Check header checksum
@@ -2227,9 +2202,11 @@ USTATUS FfsParser::parseFileHeader(const UByteArray & file, const UINT32 localOf
     // Check data checksum
     // Data checksum must be calculated
     bool msgInvalidDataChecksum = false;
+    bool msgDataChecksumForEmptyFile = false;
     UINT8 calculatedData = 0;
     if (fileHeader->Attributes & FFS_ATTRIB_CHECKSUM) {
-        calculatedData = calculateChecksum8((const UINT8*)body.constData(), (UINT32)body.size());
+        if (body.size() == 0) msgDataChecksumForEmptyFile = true;
+        else calculatedData = calculateChecksum8((const UINT8*)body.constData(), (UINT32)body.size());
     }
     // Data checksum must be one of predefined values
     else if (volumeRevision == 1) {
@@ -2239,7 +2216,7 @@ USTATUS FfsParser::parseFileHeader(const UByteArray & file, const UINT32 localOf
         calculatedData = FFS_FIXED_CHECKSUM2;
     }
     
-    if (fileHeader->IntegrityCheck.Checksum.File != calculatedData) {
+    if (body.size() > 0 && fileHeader->IntegrityCheck.Checksum.File != calculatedData) {
         msgInvalidDataChecksum = true;
     }
     
@@ -2319,6 +2296,10 @@ USTATUS FfsParser::parseFileHeader(const UByteArray & file, const UINT32 localOf
         msg(usprintf("%s: invalid tail value %04Xh", __FUNCTION__, *(const UINT16*)tail.constData()), index);
     if (msgUnknownType)
         msg(usprintf("%s: unknown file type %02Xh", __FUNCTION__, fileHeader->Type), index);
+    if (msgTailedFileTooSmall)
+        msg(usprintf("%s: tailed file too small", __FUNCTION__), index);
+    if(msgDataChecksumForEmptyFile)
+        msg(usprintf("%s: data checksum attribute set for empty file", __FUNCTION__), index);
     
     return U_SUCCESS;
 }
@@ -4001,7 +3982,7 @@ USTATUS FfsParser::addInfoRecursive(const UModelIndex & index, bool enableCpuAdd
             if (address <= 0xFFFFFFFFUL) {
                 UINT32 headerSize = (UINT32)model->header(index).size();
                 if (headerSize) {
-                    model->addInfo(index, usprintf("Data address: %08Xh\n", (UINT32)address + headerSize), false);
+                    if (!model->hasEmptyBody(index)) model->addInfo(index, usprintf("Data address: %08Xh\n", (UINT32)address + headerSize), false);
                     model->addInfo(index, usprintf("Header address: %08Xh\n", (UINT32)address), false);
                 }
                 else {
@@ -4806,7 +4787,30 @@ USTATUS FfsParser::parseAmdMicrocodeHeader(const UByteArray & microcode, const U
     return U_SUCCESS;
 }
 
-USTATUS FfsParser::parseBpdtRegion(const UByteArray & region, const UINT32 localOffset, const UINT32 sbpdtOffsetFixup, const UModelIndex & parent, UModelIndex & index)
+UString FfsParser::getMeVersionFromPartition(const UByteArray & partition)
+{
+    // Search for new signature
+    UINT32 mn2Sig = ME_VERSION_SIGNATURE2; // $MN2
+    UByteArray sig2((const char*)&mn2Sig, sizeof(mn2Sig));
+    INT32 vOff = (INT32)partition.indexOf(sig2);
+    if (vOff < 0) { // No $MN2 in this partition
+        // Search for old signature
+        UINT32 manSig = ME_VERSION_SIGNATURE; // $MAN
+        UByteArray sig((const char*)&manSig, sizeof(manSig));
+        vOff = (INT32)partition.indexOf(sig);
+        if (vOff < 0) { // No $MAN in this partition
+            return UString("");
+        }
+    }
+    
+    if ((UINT32)vOff + sizeof(ME_VERSION) > (UINT32)partition.size())
+        return UString(""); // Not enough data
+
+    const ME_VERSION* ver = (const ME_VERSION*)(partition.constData() + vOff);
+    return usprintf("%u.%u.%u.%u", ver->Major, ver->Minor, ver->Bugfix, ver->Build);
+}
+
+USTATUS FfsParser::parseBpdtRegion(const UByteArray & region, const UINT32 localOffset, const UINT32 sbpdtOffsetFixup, const UModelIndex & parent, UModelIndex & index, UString & meVersion)
 {
     UINT32 regionSize = (UINT32)region.size();
     
@@ -4960,6 +4964,13 @@ make_partition_table_consistent:
             partitions.insert(iter, padding);
         }
     }
+    // Check for padding after the last region
+    if ((UINT32)partitions.back().ptEntry.Offset + (UINT32)partitions.back().ptEntry.Size < regionSize) {
+        padding.ptEntry.Offset = partitions.back().ptEntry.Offset + partitions.back().ptEntry.Size;
+        padding.ptEntry.Size = (UINT32)(regionSize - padding.ptEntry.Offset);
+        padding.type = Types::Padding;
+        partitions.push_back(padding);
+    }
     
     // Partition map is consistent
     for (size_t i = 0; i < partitions.size(); i++) {
@@ -4975,15 +4986,21 @@ make_partition_table_consistent:
             UString("\nCode sub-partition: ") + (partitions[i].ptEntry.CodeSubPartition ? "Yes" : "No") +
             UString("\nUMA cacheable: ") + (partitions[i].ptEntry.UmaCacheable ? "Yes" : "No");
             
-            UString text = bpdtEntryTypeToUString(partitions[i].ptEntry.Type);
+            UString text = name;
             
             // Add tree item
             UModelIndex partitionIndex = model->addItem(localOffset + partitions[i].ptEntry.Offset, Types::BpdtPartition, 0, name, text, info, UByteArray(), partition, UByteArray(), Fixed, parent);
             
+            // Populate ME version from FTPR partition
+            if (partitions[i].ptEntry.Type == BPDT_ENTRY_TYPE_FTPR) {
+                meVersion = getMeVersionFromPartition(partition);
+            }
+            
             // Special case of S-BPDT
             if (partitions[i].ptEntry.Type == BPDT_ENTRY_TYPE_S_BPDT) {
                 UModelIndex sbpdtIndex;
-                parseBpdtRegion(partition, 0, partitions[i].ptEntry.Offset, partitionIndex, sbpdtIndex); // Third parameter is a fixup for S-BPDT offset entries, because they are calculated from the start of BIOS region
+                UString meVersion;
+                parseBpdtRegion(partition, 0, partitions[i].ptEntry.Offset, partitionIndex, sbpdtIndex, meVersion); // Third parameter is a fixup for S-BPDT offset entries, because they are calculated from the start of BIOS region
             }
             
             // Parse code partitions
@@ -5009,16 +5026,17 @@ make_partition_table_consistent:
         }
     }
     
-    // Add padding after the last region
-    if ((UINT64)partitions.back().ptEntry.Offset + (UINT64)partitions.back().ptEntry.Size < regionSize) {
-        UINT64 usedSize = (UINT64)partitions.back().ptEntry.Offset + (UINT64)partitions.back().ptEntry.Size;
-        UByteArray padding = region.mid(partitions.back().ptEntry.Offset + partitions.back().ptEntry.Size, (int)(regionSize - usedSize));
-        
-        // Get info
-        name = UString("Padding");
-        
-        // Add tree item
-        model->addItem(localOffset + partitions.back().ptEntry.Offset + partitions.back().ptEntry.Size, Types::Padding, getPaddingType(padding), name, UString(), UString(), UByteArray(), padding, UByteArray(), Fixed, parent);
+    // Try getting ME version from RBEP partition if it's still not found
+    if (meVersion.isEmpty()) {
+        for (size_t i = 0; i < partitions.size(); i++) {
+            if (partitions[i].type == Types::BpdtPartition) {
+                // Populate ME version from RBEP partition
+                if (partitions[i].ptEntry.Type == BPDT_ENTRY_TYPE_RBEP) {
+                    UByteArray partition = region.mid(partitions[i].ptEntry.Offset, partitions[i].ptEntry.Size);
+                    meVersion = getMeVersionFromPartition(partition);
+                }
+            }
+        }
     }
     
     return U_SUCCESS;

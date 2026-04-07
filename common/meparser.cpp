@@ -42,65 +42,97 @@ USTATUS MeParser::parseMeRegionBody(const UModelIndex & index)
     if (!index.isValid())
         return U_INVALID_PARAMETER;
     
+    UString meVersion;
+    USTATUS status = U_INVALID_ME_PARTITION_TABLE;
+    bool parsing_done = false;
+    
     // Obtain ME region
     UByteArray meRegion = model->body(index);
+    UINT32 regionSize = (UINT32)meRegion.size();
     
-    // Check region size
-    if ((UINT32)meRegion.size() < ME_ROM_BYPASS_VECTOR_SIZE + sizeof(UINT32)) {
-        msg(usprintf("%s: ME region too small to fit ROM bypass vector", __FUNCTION__), index);
-        return U_INVALID_ME_PARTITION_TABLE;
-    }
-    
-    // Check ME signature to determine it's version
-    // ME v11 and older layout
-    if (*(UINT32*)meRegion.constData() == FPT_HEADER_SIGNATURE || *(UINT32*)(meRegion.constData() + ME_ROM_BYPASS_VECTOR_SIZE)  == FPT_HEADER_SIGNATURE) {
-        UModelIndex ptIndex;
-        return parseFptRegion(meRegion, index, ptIndex);
-    }
-    
-    // IFWI 1.6
-    // Check region size
-    if ((UINT32)meRegion.size() < sizeof(IFWI_16_LAYOUT_HEADER)) {
-        msg(usprintf("%s: ME region too small to fit IFWI 1.6 layout header", __FUNCTION__), index);
-        return U_INVALID_ME_PARTITION_TABLE;
-    }
-    
-    const IFWI_16_LAYOUT_HEADER* ifwi16Header = (const IFWI_16_LAYOUT_HEADER*)meRegion.constData();
-    // Check region size
-    if ((UINT32)meRegion.size() < ifwi16Header->DataPartition.Offset + sizeof(UINT32)) {
-        msg(usprintf("%s: ME region too small to fit IFWI 1.6 data partition", __FUNCTION__), index);
-        return U_INVALID_ME_PARTITION_TABLE;
-    }
-    // Data partition always points to FPT header
-    if (*(UINT32*)(meRegion.constData() + ifwi16Header->DataPartition.Offset) == FPT_HEADER_SIGNATURE) {
-        UModelIndex ptIndex;
-        return parseIfwi16Region(meRegion, index, ptIndex);
+    // Check ME signature to determine its version
+    // Try ME v11 and older layout
+    {
+        // Check region size
+        if ((UINT32)meRegion.size() < ME_ROM_BYPASS_VECTOR_SIZE + sizeof(UINT32)) {
+            msg(usprintf("%s: ME region too small to fit ROM bypass vector", __FUNCTION__), index);
+            status = U_INVALID_ME_PARTITION_TABLE;
+            parsing_done = true;
+        }
+        
+        if (!parsing_done &&
+            (*(UINT32*)meRegion.constData() == FPT_HEADER_SIGNATURE || *(UINT32*)(meRegion.constData() + ME_ROM_BYPASS_VECTOR_SIZE) == FPT_HEADER_SIGNATURE)) {
+            UModelIndex ptIndex;
+            status = parseFptRegion(meRegion, index, ptIndex, meVersion);
+            parsing_done = true;
+        }
     }
     
-    // IFWI 1.7
-    if ((UINT32)meRegion.size() < sizeof(IFWI_17_LAYOUT_HEADER)) {
-        msg(usprintf("%s: ME region too small to fit IFWI 1.7 layout header", __FUNCTION__), index);
-        return U_INVALID_ME_PARTITION_TABLE;
+    // Try IFWI 1.6
+    if (!parsing_done) {
+        // Check region size
+        if (regionSize < sizeof(IFWI_16_LAYOUT_HEADER)) {
+            msg(usprintf("%s: ME region too small to fit IFWI 1.6 layout header", __FUNCTION__), index);
+            status = U_INVALID_ME_PARTITION_TABLE;
+            parsing_done = true;
+        }
+        
+        const IFWI_16_LAYOUT_HEADER* ifwi16Header = (const IFWI_16_LAYOUT_HEADER*)meRegion.constData();
+        // Check region size again
+        if (!parsing_done && regionSize < ifwi16Header->DataPartition.Offset + sizeof(UINT32)) {
+            msg(usprintf("%s: ME region too small to fit IFWI 1.6 data partition", __FUNCTION__), index);
+            status = U_INVALID_ME_PARTITION_TABLE;
+            parsing_done = true;
+        }
+        // Data partition always points to FPT header
+        if (!parsing_done && *(UINT32*)(meRegion.constData() + ifwi16Header->DataPartition.Offset) == FPT_HEADER_SIGNATURE) {
+            UModelIndex ptIndex;
+            status = parseIfwi16Region(meRegion, index, ptIndex, meVersion);
+            parsing_done = true;
+        }
     }
     
-    const IFWI_17_LAYOUT_HEADER* ifwi17Header = (const IFWI_17_LAYOUT_HEADER*)meRegion.constData();
-    // Check region size
-    if ((UINT32)meRegion.size() < ifwi17Header->DataPartition.Offset + sizeof(UINT32)) {
-        msg(usprintf("%s: ME region too small to fit IFWI 1.7 data partition", __FUNCTION__), index);
-        return U_INVALID_ME_PARTITION_TABLE;
-    }
-    // Data partition always points to FPT header
-    if (*(UINT32*)(meRegion.constData() + ifwi17Header->DataPartition.Offset)== FPT_HEADER_SIGNATURE) {
-        UModelIndex ptIndex;
-        return parseIfwi17Region(meRegion, index, ptIndex);
+    // Try IFWI 1.7
+    if (!parsing_done) {
+        // Check region size
+        if (regionSize < sizeof(IFWI_17_LAYOUT_HEADER)) {
+            msg(usprintf("%s: ME region too small to fit IFWI 1.7 layout header", __FUNCTION__), index);
+            status = U_INVALID_ME_PARTITION_TABLE;
+            parsing_done = true;
+        }
+        
+        const IFWI_17_LAYOUT_HEADER* ifwi17Header = (const IFWI_17_LAYOUT_HEADER*)meRegion.constData();
+        // Check region size agan
+        if (!parsing_done && regionSize < ifwi17Header->DataPartition.Offset + sizeof(UINT32)) {
+            msg(usprintf("%s: ME region too small to fit IFWI 1.7 data partition", __FUNCTION__), index);
+            status = U_INVALID_ME_PARTITION_TABLE;
+            parsing_done = true;
+        }
+        // Data partition always points to FPT header
+        if (!parsing_done && *(UINT32*)(meRegion.constData() + ifwi17Header->DataPartition.Offset) == FPT_HEADER_SIGNATURE) {
+            UModelIndex ptIndex;
+            status = parseIfwi17Region(meRegion, index, ptIndex, meVersion);
+            parsing_done = true;
+        }
     }
     
     // Something else entirely
-    msg(usprintf("%s: unknown ME region format", __FUNCTION__), index);
-    return U_INVALID_ME_PARTITION_TABLE;
+    if (!parsing_done) {
+        msg(usprintf("%s: unknown ME region format", __FUNCTION__), index);
+    }
+
+    // Add version info
+    if (meVersion.isEmpty()) {
+        model->addInfo(index, UString("Version: unknown\n"));
+    }
+    else {
+        model->addInfo(index, UString("Version: ") + meVersion + UString("\n"));
+    }
+    
+    return status;
 }
 
-USTATUS MeParser::parseFptRegion(const UByteArray & region, const UModelIndex & parent, UModelIndex & index)
+USTATUS MeParser::parseFptRegion(const UByteArray & region, const UModelIndex & parent, UModelIndex & index, UString & meVersion)
 {
     // Check region size
     if ((UINT32)region.size() < sizeof(FPT_HEADER)) {
@@ -179,7 +211,7 @@ USTATUS MeParser::parseFptRegion(const UByteArray & region, const UModelIndex & 
     const FPT_HEADER_ENTRY* firstPtEntry = (const FPT_HEADER_ENTRY*)(region.constData() + offset);
 
     if ((UINT32)offset + sizeof(FPT_HEADER_ENTRY) * numEntries >= region.size()) {
-        msg(usprintf("%s: Corrupted ME region, too many header entries", __FUNCTION__), parent);
+        msg(usprintf("%s: corrupted ME region, too many header entries", __FUNCTION__), parent);
         return U_INVALID_ME_PARTITION_TABLE;
     }
 
@@ -310,8 +342,14 @@ make_partition_table_consistent:
             // Add tree item
             UINT8 type = Subtypes::CodeFptPartition + partitions[i].ptEntry.Type;
             partitionIndex = model->addItem(partitions[i].ptEntry.Offset, Types::FptPartition, type, name, UString(), info, UByteArray(), partition, UByteArray(), Fixed, parent);
+            
+            // Populate ME version from FTPR partition
+            if (name == UString("FTPR")) {
+                meVersion = ffsParser->getMeVersionFromPartition(partition);
+            }
+            
+            // Parse code partition contents
             if (type == Subtypes::CodeFptPartition && partition.size() >= (int) sizeof(UINT32) && readUnaligned((const UINT32*)partition.constData()) == CPD_SIGNATURE) {
-                // Parse code partition contents
                 UModelIndex cpdIndex;
                 ffsParser->parseCpdRegion(partition, partitions[i].ptEntry.Offset, partitionIndex, cpdIndex);
             }
@@ -325,10 +363,24 @@ make_partition_table_consistent:
         }
     }
     
+    // Try getting ME version from RBEP partition if it's still not found
+    if (meVersion.isEmpty()) {
+        for (size_t i = 0; i < partitions.size(); i++) {
+            if (partitions[i].type == Types::FptPartition) {
+                name = visibleAsciiOrHex((UINT8*) partitions[i].ptEntry.Name, 4);
+                // Populate ME version from RBEP partition
+                if (name == UString("RBEP")) {
+                    UByteArray partition = region.mid(partitions[i].ptEntry.Offset, partitions[i].ptEntry.Size);
+                    meVersion = ffsParser->getMeVersionFromPartition(partition);
+                }
+            }
+        }
+    }
+    
     return U_SUCCESS;
 }
 
-USTATUS MeParser::parseIfwi16Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index)
+USTATUS MeParser::parseIfwi16Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index, UString & meVersion)
 {
     // Check region size again
     if ((UINT32)region.size() < sizeof(IFWI_16_LAYOUT_HEADER)) {
@@ -475,12 +527,12 @@ make_partition_table_consistent:
             // Parse partition further
             if (partitions[i].subtype == Subtypes::DataIfwiPartition) {
                 UModelIndex dataPartitionFptRegionIndex;
-                parseFptRegion(partition, partitionIndex, dataPartitionFptRegionIndex);
+                parseFptRegion(partition, partitionIndex, dataPartitionFptRegionIndex, meVersion);
             }
             else if (partitions[i].subtype == Subtypes::BootIfwiPartition) {
                 // Parse code partition contents
                 UModelIndex bootPartitionBpdtRegionIndex;
-                ffsParser->parseBpdtRegion(partition, 0, 0, partitionIndex, bootPartitionBpdtRegionIndex);
+                ffsParser->parseBpdtRegion(partition, 0, 0, partitionIndex, bootPartitionBpdtRegionIndex, meVersion);
             }
         }
         else if (partitions[i].type == Types::Padding) {
@@ -495,7 +547,7 @@ make_partition_table_consistent:
     return U_SUCCESS;
 }
 
-USTATUS MeParser::parseIfwi17Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index)
+USTATUS MeParser::parseIfwi17Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index, UString & meVersion)
 {
     // Check region size again
     if ((UINT32)region.size() < sizeof(IFWI_17_LAYOUT_HEADER)) {
@@ -645,7 +697,7 @@ make_partition_table_consistent:
                 name = "Data partition";
                 
             }
-            else if (partitions[i].subtype == Subtypes::BootIfwiPartition){
+            else if (partitions[i].subtype == Subtypes::BootIfwiPartition) {
                 name = "Boot partition";
             }
             else {
@@ -658,18 +710,18 @@ make_partition_table_consistent:
             // Parse partition further
             if (partitions[i].subtype == Subtypes::DataIfwiPartition) {
                 UModelIndex dataPartitionFptRegionIndex;
-                parseFptRegion(partition, partitionIndex, dataPartitionFptRegionIndex);
+                parseFptRegion(partition, partitionIndex, dataPartitionFptRegionIndex, meVersion);
             }
             else if (partitions[i].subtype == Subtypes::BootIfwiPartition) {
                 // Parse code partition contents
                 UModelIndex bootPartitionRegionIndex;
                 if (*(UINT32*)partition.constData() == FPT_HEADER_SIGNATURE) {
                     // Parse as FptRegion
-                    parseFptRegion(partition, partitionIndex, bootPartitionRegionIndex);
+                    parseFptRegion(partition, partitionIndex, bootPartitionRegionIndex, meVersion);
                 }
                 else {
                     // Parse as BpdtRegion
-                    ffsParser->parseBpdtRegion(partition, 0, 0, partitionIndex, bootPartitionRegionIndex);
+                    ffsParser->parseBpdtRegion(partition, 0, 0, partitionIndex, bootPartitionRegionIndex, meVersion);
                 }
             }
         }

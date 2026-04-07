@@ -83,7 +83,6 @@ typedef size_t USTATUS;
 #define U_INVALID_MANIFEST                251
 #define U_UNKNOWN_MANIFEST_HEADER_VERSION 252
 #define U_INVALID_ME_PARTITION_TABLE      253
-#define U_INVALID_ME_PARTITION            254
 
 #define U_NOT_IMPLEMENTED                 255
 

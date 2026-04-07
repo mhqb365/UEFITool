@@ -48,10 +48,10 @@ private:
     void msg(const UString message, const UModelIndex index = UModelIndex()) {
         messagesVector.push_back(std::pair<UString, UModelIndex>(message, index));
     }
-
-    USTATUS parseFptRegion(const UByteArray & region, const UModelIndex & parent, UModelIndex & index);
-    USTATUS parseIfwi16Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index);
-    USTATUS parseIfwi17Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index);
+    
+    USTATUS parseFptRegion(const UByteArray & region, const UModelIndex & parent, UModelIndex & index, UString & meVersion);
+    USTATUS parseIfwi16Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index, UString & meVersion);
+    USTATUS parseIfwi17Region(const UByteArray & region, const UModelIndex & parent, UModelIndex & index, UString & meVersion);
 };
 #else
 class MeParser
