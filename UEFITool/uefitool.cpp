@@ -274,7 +274,7 @@ void UEFITool::updateUiForNewColorScheme(Qt::ColorScheme scheme)
     QApplication::setPalette(QApplication::style()->standardPalette());
 
     QModelIndex current = ui->structureTreeView->selectionModel()->currentIndex();
-    selectedHexView.setBackground(0, model->header(current).size(),
+    selectedHexView.setBackground(0, model->headerSize(current),
         model->markingDarkMode() ? Qt::darkGreen : Qt::green);
 }
 #endif
@@ -351,9 +351,9 @@ void UEFITool::populateUi(const QModelIndex &current)
     
     // Set Hex view
     selectedHexView.clearMetadata();
-    selectedHexView.setBackground(0, model->header(current).size(),
+    selectedHexView.setBackground(0, model->headerSize(current),
                                   model->markingDarkMode() ? Qt::darkGreen : Qt::green);
-    selectedHexView.setData(model->entire(current));
+    selectedHexView.setData(model->full(current));
     enableDock(ui->hexViewDock, true);
     
     // Enable menus
@@ -1562,7 +1562,7 @@ void UEFITool::hashCrc32()
     if (!index.isValid())
         return;
     
-    QByteArray data = model->entire(index);
+    QByteArray data = model->full(index);
     doCrc32(data);
 }
 
@@ -1572,7 +1572,7 @@ void UEFITool::hashSha1()
     if (!index.isValid())
         return;
     
-    QByteArray data = model->entire(index);
+    QByteArray data = model->full(index);
     doSha1(data);
 }
 
@@ -1582,7 +1582,7 @@ void UEFITool::hashSha256()
     if (!index.isValid())
         return;
     
-    QByteArray data = model->entire(index);
+    QByteArray data = model->full(index);
     doSha256(data);
 }
 
@@ -1592,7 +1592,7 @@ void UEFITool::hashSha384()
     if (!index.isValid())
         return;
     
-    QByteArray data = model->entire(index);
+    QByteArray data = model->full(index);
     doSha384(data);
 }
 
@@ -1602,7 +1602,7 @@ void UEFITool::hashSha512()
     if (!index.isValid())
         return;
     
-    QByteArray data = model->entire(index);
+    QByteArray data = model->full(index);
     doSha512(data);
 }
 
@@ -1612,7 +1612,7 @@ void UEFITool::hashSm3()
     if (!index.isValid())
         return;
     
-    QByteArray data = model->entire(index);
+    QByteArray data = model->full(index);
     doSm3(data);
 }
 

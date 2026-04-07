@@ -136,7 +136,7 @@ USTATUS FitParser::parseFit(const UModelIndex & index)
             UINT32 currentEntryBase = (UINT32)(currentEntry->Address - ffsParser->addressDiff);
             itemIndex = model->findByBase(currentEntryBase);
             if (itemIndex.isValid()) {
-                UByteArray item = model->entire(itemIndex);
+                UByteArray item = model->full(itemIndex);
                 UINT32 localOffset = currentEntryBase - model->base(itemIndex);
                 
                 switch (currentEntry->Type) {
@@ -235,12 +235,12 @@ void FitParser::findFitRecursive(const UModelIndex & index, UModelIndex & found,
          offset >= 0;
          offset = (INT32)model->body(index).indexOf(fitSignature, offset + 1)) {
         // FIT candidate found, calculate its physical address
-        UINT32 fitAddress = (UINT32)(model->base(index) + (UINT32)ffsParser->addressDiff + model->header(index).size() + (UINT32)offset);
+        UINT32 fitAddress = (UINT32)(model->base(index) + (UINT32)ffsParser->addressDiff + model->headerSize(index) + (UINT32)offset);
         
         // Check FIT address to be stored in the last VTF
         if (fitAddress == storedFitAddress) {
             // Valid FIT table must have at least two entries
-            if ((UINT32)model->body(index).size() < offset + 2*sizeof(INTEL_FIT_ENTRY)) {
+            if (model->bodySize(index) < offset + 2*sizeof(INTEL_FIT_ENTRY)) {
                 msg(usprintf("%s: FIT table candidate found, too small to contain real FIT", __FUNCTION__), index);
             }
             else {

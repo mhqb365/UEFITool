@@ -39,7 +39,7 @@ USTATUS FfsBuilder::erase(const UModelIndex & index, UByteArray & erased)
         }
     }
     
-    erased = UByteArray(model->entire(index).size(), emptyByte);
+    erased = UByteArray(model->fullSize(index), emptyByte);
     
     return U_SUCCESS;
 }
@@ -74,7 +74,7 @@ USTATUS FfsBuilder::buildCapsule(const UModelIndex & index, UByteArray & capsule
     // No action
     if (model->action(index) == Actions::NoAction) {
         // Use original item data
-        capsule = model->entire(index);
+        capsule = model->full(index);
         return U_SUCCESS;
     }
     
@@ -124,7 +124,7 @@ USTATUS FfsBuilder::buildCapsule(const UModelIndex & index, UByteArray & capsule
             
             // Check size of reconstructed capsule body, it must remain the same
             UINT32 newSize = (UINT32)capsule.size();
-            UINT32 oldSize = (UINT32)model->body(index).size();
+            UINT32 oldSize = model->bodySize(index);
             if (newSize > oldSize) {
                 msg(usprintf("buildCapsule: new capsule size %Xh (%u) is bigger than the original %Xh (%u)", newSize, newSize, oldSize, oldSize), index);
                 return U_INVALID_CAPSULE;
@@ -154,7 +154,7 @@ USTATUS FfsBuilder::buildIntelImage(const UModelIndex & index, UByteArray & inte
     
     // No action
     if (model->action(index) == Actions::NoAction) {
-        intelImage = model->entire(index);
+        intelImage = model->full(index);
         return U_SUCCESS;
     }
     // Remove
@@ -165,7 +165,7 @@ USTATUS FfsBuilder::buildIntelImage(const UModelIndex & index, UByteArray & inte
     // Rebuild
     else if (model->action(index) == Actions::Rebuild) {
         // First child will always be descriptor for this type of image, and it's read only for now
-        intelImage = model->entire(index.model()->index(0, 0, index));
+        intelImage = model->full(index.model()->index(0, 0, index));
         
         // Process other regions
         for (int i = 1; i < model->rowCount(index); i++) {
@@ -179,7 +179,7 @@ USTATUS FfsBuilder::buildIntelImage(const UModelIndex & index, UByteArray & inte
             UINT8 type = model->type(currentRegion);
             if (type == Types::Padding) {
                 // Add padding as is
-                intelImage += model->entire(currentRegion);
+                intelImage += model->full(currentRegion);
                 continue;
             }
             
@@ -223,7 +223,7 @@ USTATUS FfsBuilder::buildIntelImage(const UModelIndex & index, UByteArray & inte
         
         // Check size of new image, it must be same as old one
         UINT32 newSize = (UINT32)intelImage.size();
-        UINT32 oldSize = (UINT32)model->body(index).size();
+        UINT32 oldSize = model->bodySize(index);
         if (newSize > oldSize) {
             msg(usprintf("buildIntelImage: new image size %Xh (%u) is bigger than the original %Xh (%u)", newSize, newSize, oldSize, oldSize), index);
             return U_INVALID_IMAGE;
@@ -250,7 +250,7 @@ USTATUS FfsBuilder::buildRawArea(const UModelIndex & index, UByteArray & rawArea
     
     // No action required
     if (model->action(index) == Actions::NoAction) {
-        rawArea = model->entire(index);
+        rawArea = model->full(index);
         return U_SUCCESS;
     }
     // Remove
@@ -294,7 +294,7 @@ USTATUS FfsBuilder::buildRawArea(const UModelIndex & index, UByteArray & rawArea
             
             // Check size of new raw area, it must be same as original one
             UINT32 newSize = (UINT32)rawArea.size();
-            UINT32 oldSize = (UINT32)model->body(index).size();
+            UINT32 oldSize = model->bodySize(index);
             if (newSize > oldSize) {
                 msg(usprintf("buildRawArea: new area size %Xh (%u) is bigger than the original %Xh (%u)", newSize, newSize, oldSize, oldSize), index);
                 return U_INVALID_RAW_AREA;
@@ -326,7 +326,7 @@ USTATUS FfsBuilder::buildPadding(const UModelIndex & index, UByteArray & padding
     
     // No action required
     if (model->action(index) == Actions::NoAction) {
-        padding = model->entire(index);
+        padding = model->full(index);
         return U_SUCCESS;
     }
     // Remove
@@ -351,7 +351,7 @@ USTATUS FfsBuilder::buildNonUefiData(const UModelIndex & index, UByteArray & dat
     
     // No action required
     if (model->action(index) == Actions::NoAction) {
-        data = model->entire(index);
+        data = model->full(index);
         return U_SUCCESS;
     }
     // Remove
@@ -377,7 +377,7 @@ USTATUS FfsBuilder::buildFreeSpace(const UModelIndex & index, UByteArray & freeS
         return U_INVALID_PARAMETER;
     
     // No actions possible for free space
-    freeSpace = model->entire(index);
+    freeSpace = model->full(index);
     return U_SUCCESS;
 }
 

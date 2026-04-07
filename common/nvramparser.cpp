@@ -63,7 +63,7 @@ USTATUS NvramParser::parseNvarStore(const UModelIndex & index, const bool probe)
     }
     
     try {
-        const UINT32 localOffset = (UINT32)model->header(index).size();
+        const UINT32 localOffset = model->headerSize(index);
         umemstream is(nvar.constData(), nvar.size());
         kaitai::kstream ks(&is);
         ami_nvar_t parsed(&ks);
@@ -317,7 +317,7 @@ USTATUS NvramParser::parseNvramVolumeBody(const UModelIndex & index,const UINT32
     }
     
     // Get local offset
-    const UINT32 localOffset = (UINT32)model->header(index).size();
+    const UINT32 localOffset = model->headerSize(index);
     
     // Get item data
     UByteArray volumeBody = model->body(index);

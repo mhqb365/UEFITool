@@ -206,12 +206,20 @@ UINT8 TreeModel::marking(const UModelIndex &index) const
     return item->marking();
 }
 
-UByteArray TreeModel::entire(const UModelIndex& index) const
+UByteArray TreeModel::full(const UModelIndex& index) const
 {
     if (!index.isValid())
         return UByteArray();
     TreeItem* item = static_cast<TreeItem*>(index.internalPointer());
-    return item->entire();
+    return item->full();
+}
+
+UINT32 TreeModel::fullSize(const UModelIndex &index) const
+{
+    if (!index.isValid())
+        return true;
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    return item->fullSize();
 }
 
 UByteArray TreeModel::header(const UModelIndex &index) const
@@ -230,6 +238,14 @@ bool TreeModel::hasEmptyHeader(const UModelIndex &index) const
     return item->hasEmptyHeader();
 }
 
+UINT32 TreeModel::headerSize(const UModelIndex &index) const
+{
+    if (!index.isValid())
+        return true;
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    return item->headerSize();
+}
+
 UByteArray TreeModel::body(const UModelIndex &index) const
 {
     if (!index.isValid())
@@ -246,6 +262,14 @@ bool TreeModel::hasEmptyBody(const UModelIndex &index) const
     return item->hasEmptyBody();
 }
 
+UINT32 TreeModel::bodySize(const UModelIndex &index) const
+{
+    if (!index.isValid())
+        return true;
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    return item->bodySize();
+}
+
 UByteArray TreeModel::tail(const UModelIndex &index) const
 {
     if (!index.isValid())
@@ -260,6 +284,14 @@ bool TreeModel::hasEmptyTail(const UModelIndex &index) const
         return true;
     TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
     return item->hasEmptyTail();
+}
+
+UINT32 TreeModel::tailSize(const UModelIndex &index) const
+{
+    if (!index.isValid())
+        return true;
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    return item->tailSize();
 }
 
 UString TreeModel::name(const UModelIndex &index) const
@@ -614,7 +646,7 @@ goDeeper:
         UModelIndex currentIndex = parentIndex.model()->index(i, 0, parentIndex);
         
         UINT32 currentBase = this->base(currentIndex);
-        UINT32 fullSize = (UINT32)(entire(currentIndex).size());
+        UINT32 fullSize = this->fullSize(currentIndex);
         if ((compressed(currentIndex) == false || (compressed(currentIndex) == true && compressed(currentIndex.parent()) == false)) // Base is meaningful only for true uncompressed items
             && currentBase <= base && base < currentBase + fullSize) { // Base must be in range [currentBase, currentBase + fullSize)
             // Found a better candidate

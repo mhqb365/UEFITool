@@ -79,7 +79,7 @@ USTATUS FfsFinder::findHexPattern(const UModelIndex & index, const UByteArray & 
         if (offset % 2 == 0) {
             // For patterns that cross header|body boundary, skip patterns entirely located in body, since
             // children search above has already found them.
-            if (!(hasChildren && mode == SEARCH_MODE_ALL && offset/2 >= model->header(index).size())) {
+            if (!(hasChildren && mode == SEARCH_MODE_ALL && offset/2 >= model->headerSize(index))) {
                 UModelIndex parentFileIndex = model->findParentOfType(index, Types::File);
                 UString name = model->name(index);
                 if (model->parent(index) == parentFileIndex) {

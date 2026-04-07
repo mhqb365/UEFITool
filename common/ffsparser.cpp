@@ -841,7 +841,7 @@ USTATUS FfsParser::parseRawArea(const UModelIndex & index)
     
     // Get item data
     UByteArray data = model->body(index);
-    UINT32 headerSize = (UINT32)model->header(index).size();
+    UINT32 headerSize = model->headerSize(index);
     
     // Obtain required information from parent volume, if it exists
     UINT8 emptyByte = 0xFF;
@@ -1891,7 +1891,7 @@ USTATUS FfsParser::parseVolumeBody(const UModelIndex & index, const bool probe)
     
     // Get volume header size and body
     UByteArray volumeBody = model->body(index);
-    UINT32 volumeHeaderSize = (UINT32)model->header(index).size();
+    UINT32 volumeHeaderSize = model->headerSize(index);
     
     // Parse NVRAM volume with a dedicated function
     if (model->subtype(index) == Subtypes::NvramVolume) {
@@ -2430,7 +2430,7 @@ USTATUS FfsParser::parsePadFileBody(const UModelIndex & index)
     }
     
     // Add all bytes before as free space...
-    UINT32 headerSize = (UINT32)model->header(index).size();
+    UINT32 headerSize = model->headerSize(index);
     if (nonEmptyByteOffset >= 8) {
         // Align free space to 8 bytes boundary
         if (nonEmptyByteOffset != ALIGN8(nonEmptyByteOffset))
@@ -2485,7 +2485,7 @@ USTATUS FfsParser::parseSections(const UByteArray & sections, const UModelIndex 
     
     // Search for and parse all sections
     UINT32 bodySize = (UINT32)sections.size();
-    UINT32 headerSize = (UINT32)model->header(index).size();
+    UINT32 headerSize = model->headerSize(index);
     UINT32 sectionOffset = 0;
     USTATUS result = U_SUCCESS;
     
@@ -3180,7 +3180,7 @@ USTATUS FfsParser::parseCompressedSectionBody(const UModelIndex & index)
     
     // Obtain required information from parsing data
     UINT8 compressionType = EFI_NOT_COMPRESSED;
-    UINT32 uncompressedSize = (UINT32)model->body(index).size();
+    UINT32 uncompressedSize = model->bodySize(index);
     if (model->hasEmptyParsingData(index) == false) {
         UByteArray data = model->parsingData(index);
         const COMPRESSED_SECTION_PARSING_DATA* pdata = (const COMPRESSED_SECTION_PARSING_DATA*)data.constData();
@@ -3815,7 +3815,7 @@ USTATUS FfsParser::performSecondPass(const UModelIndex & index)
     }
     
     // Calculate address difference
-    const UINT32 vtfSize = (UINT32)(model->entire(lastVtf).size());
+    const UINT32 vtfSize = model->fullSize(lastVtf);
     addressDiff = 0xFFFFFFFFULL - model->base(lastVtf) - vtfSize + 1;
     
     // Parse reset vector data
@@ -3840,7 +3840,7 @@ USTATUS FfsParser::parseResetVectorData()
         return U_SUCCESS;
     
     // Check VTF to have enough space at the end to fit Reset Vector Data
-    UByteArray vtf = model->entire(lastVtf);
+    UByteArray vtf = model->full(lastVtf);
     if ((UINT32)vtf.size() < sizeof(X86_RESET_VECTOR_DATA))
         return U_SUCCESS;
     
@@ -3889,7 +3889,7 @@ USTATUS FfsParser::checkTeImageBase(const UModelIndex & index)
         if (originalImageBase != 0 || adjustedImageBase != 0) {
             // Check data memory address to be equal to either OriginalImageBase or AdjustedImageBase
             UINT64 address = addressDiff + model->base(index);
-            UINT32 base = (UINT32)(address + model->header(index).size());
+            UINT32 base = (UINT32)(address + model->headerSize(index));
             
             if (originalImageBase == base) {
                 imageBaseType = EFI_IMAGE_TE_BASE_ORIGINAL;
@@ -3941,25 +3941,25 @@ USTATUS FfsParser::addInfoRecursive(const UModelIndex & index, bool enableCpuAdd
     
     // Add tail size for elements with non-empty tails
     if (!model->hasEmptyTail(index)) {
-        UINT32 tailSize = (UINT32)model->tail(index).size();
+        UINT32 tailSize = model->tailSize(index);
         model->addInfo(index, usprintf("Tail size: %Xh (%u)\n", tailSize, tailSize), false);
     }
     
     // Add body size for elements with non-empty bodies
     if (!model->hasEmptyBody(index)) {
-        UINT32 bodySize = (UINT32)model->body(index).size();
+        UINT32 bodySize = model->bodySize(index);
         model->addInfo(index, usprintf("Body size: %Xh (%u)\n", bodySize, bodySize), false);
     }
     
     // Add header size for elements with non-empty headers
     if (!model->hasEmptyHeader(index)) {
-        UINT32 headerSize = (UINT32)model->header(index).size();
+        UINT32 headerSize = model->headerSize(index);
         model->addInfo(index, usprintf("Header size: %Xh (%u)\n", headerSize, headerSize), false);
     }
     
     // Add full size for all elements
     {
-        UINT32 fullSize = (UINT32)model->entire(index).size();
+        UINT32 fullSize = (UINT32)model->fullSize(index);
         model->addInfo(index, usprintf("Full size: %Xh (%u)\n", fullSize, fullSize), false);
     }
     
@@ -3980,7 +3980,7 @@ USTATUS FfsParser::addInfoRecursive(const UModelIndex & index, bool enableCpuAdd
                     address = indexesAddressDiffs.at(i).second + model->base(index);
             }
             if (address <= 0xFFFFFFFFUL) {
-                UINT32 headerSize = (UINT32)model->header(index).size();
+                UINT32 headerSize = model->headerSize(index);
                 if (headerSize) {
                     if (!model->hasEmptyBody(index)) model->addInfo(index, usprintf("Data address: %08Xh\n", (UINT32)address + headerSize), false);
                     model->addInfo(index, usprintf("Header address: %08Xh\n", (UINT32)address), false);
@@ -3994,8 +3994,8 @@ USTATUS FfsParser::addInfoRecursive(const UModelIndex & index, bool enableCpuAdd
         model->addInfo(index, usprintf("Base: %Xh\n", model->base(index)), false);
     }
     
-    // Add fixed
-    model->addInfo(index, usprintf("Fixed: %s\n", model->fixed(index) ? "Yes" : "No"), false);
+    // TODO: add Fixed information once the new builder is ready
+    // model->addInfo(index, usprintf("Fixed: %s\n", model->fixed(index) ? "Yes" : "No"), false);
     
     // Process child items
     for (int i = 0; i < model->rowCount(index); i++) {
@@ -4093,7 +4093,7 @@ USTATUS FfsParser::checkProtectedRanges(const UModelIndex & index)
                 else {
                     try {
                         protectedRanges[i].Offset = model->base(dxeRootVolumeIndex);
-                        protectedRanges[i].Size = (UINT32)(model->entire(dxeRootVolumeIndex).size());
+                        protectedRanges[i].Size = model->fullSize(dxeRootVolumeIndex);
                         protectedParts = openedImage.mid(protectedRanges[i].Offset, protectedRanges[i].Size);
                         
                         // Calculate the hash
@@ -4339,7 +4339,7 @@ USTATUS FfsParser::markProtectedRangeRecursive(const UModelIndex & index, const 
     // Mark normal items
     else {
         UINT32 currentOffset = model->base(index);
-        UINT32 currentSize = (UINT32)(model->entire(index).size());
+        UINT32 currentSize = model->fullSize(index);
         
         if (std::min(currentOffset + currentSize, range.Offset + range.Size) > std::max(currentOffset, range.Offset)) {
             if (range.Offset <= currentOffset && currentOffset + currentSize <= range.Offset + range.Size) { // Mark as fully in range
@@ -4541,8 +4541,8 @@ USTATUS FfsParser::parseVendorHashFile(const UByteArray & fileGuid, const UModel
 
 USTATUS FfsParser::parseMicrocodeVolumeBody(const UModelIndex & index)
 {
-    const UINT32 headerSize = (UINT32)model->header(index).size();
-    const UINT32 bodySize = (UINT32)model->body(index).size();
+    const UINT32 headerSize = model->headerSize(index);
+    const UINT32 bodySize = model->bodySize(index);
     UINT32 offset = 0;
     USTATUS result = U_SUCCESS;
     
@@ -4572,7 +4572,7 @@ USTATUS FfsParser::parseMicrocodeVolumeBody(const UModelIndex & index)
         }
         
         // Get to next candidate
-        offset += model->entire(currentMicrocode).size();
+        offset += model->fullSize(currentMicrocode);
         if (offset >= bodySize)
             break;
     }
@@ -5608,7 +5608,7 @@ USTATUS FfsParser::findByRange(const UINT32 base, const UINT32 size, const UMode
     // Sort by inserting
     for (int i = 0; i < model->rowCount(index); i++) {
         UModelIndex current = model->index(i, 0, index);
-        UINT32 currentSize = (UINT32)model->entire(current).size();
+        UINT32 currentSize = model->fullSize(current);
 
         // Must be within the existing region
         if (base < model->base(current) || (base + size) >(model->base(current) + currentSize))
@@ -5632,7 +5632,7 @@ USTATUS FfsParser::insertByRange(UINT32 offset, const UINT8 type, const UINT8 su
     UModelIndex containerIndex = imageIndex(parent);
     const UString parentName = model->type(parent) == Types::Image ? UString() : model->name(parent);
     const UINT32 imageBase = model->base(containerIndex) + offset;
-    const UINT32 imageSize = (const UINT32)model->entire(containerIndex).size();
+    const UINT32 imageSize = model->fullSize(containerIndex);
     const UINT32 fullSize = offset + hdrSize + bodySize + tailSize > imageSize ? imageSize - offset : hdrSize + bodySize + tailSize;
 
     UModelIndex foundIndex;
@@ -5647,7 +5647,7 @@ USTATUS FfsParser::insertByRange(UINT32 offset, const UINT8 type, const UINT8 su
         parentInfo += model->name(parent) + usprintf(", base: %Xh\n", model->base(parent));
     if (result == U_SUCCESS && foundIndex.isValid()) {
         if (model->type(foundIndex) == type && model->subtype(foundIndex) == subtype
-            && model->base(foundIndex) == imageBase && model->entire(foundIndex).size() == fullSize)
+            && model->base(foundIndex) == imageBase && model->fullSize(foundIndex) == fullSize)
         {
             index = foundIndex;
             if (static_cast<TreeItem*>(parent.internalPointer()) != static_cast<TreeItem*>(index.internalPointer())->parent())
@@ -5683,7 +5683,7 @@ USTATUS FfsParser::insertByRange(UINT32 offset, const UINT8 type, const UINT8 su
     const UINT32 hdrOffset = imageBase - model->base(containerIndex);
     const UINT32 bodyOffset = hdrOffset + realHdrSize;
     const UINT32 tailOffset = bodyOffset + realBodySize;
-    const UByteArray containerImage = model->entire(containerIndex);
+    const UByteArray containerImage = model->full(containerIndex);
     index = model->addItem(hdrOffset, type, subtype, name, text, itemInfo,
         containerImage.mid(hdrOffset, realHdrSize), containerImage.mid(bodyOffset, realBodySize), containerImage.mid(tailOffset, realTailSize),
         Fixed, insertIndex, mode);
@@ -6832,7 +6832,7 @@ USTATUS FfsParser::parseAMDImage(const UByteArray& amdImage, const UINT32 localO
         }
         typename std::decay<decltype(indexesAddressDiffs)>::type::value_type p;
         p.first = uefiIndex;
-        p.second = 0x100000000ULL - model->base(p.first) - model->entire(p.first).size();
+        p.second = 0x100000000ULL - model->base(p.first) - model->fullSize(p.first);
         addressDiff = p.second;
         indexesAddressDiffs.push_back(p);
     }
