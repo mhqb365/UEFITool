@@ -1096,7 +1096,7 @@
   </action>
   <action name="actionResetDocks">
    <property name="text">
-    <string>&amp;Reset docks</string>
+    <string>&amp;Reset docks layout</string>
    </property>
   </action>
  </widget>
