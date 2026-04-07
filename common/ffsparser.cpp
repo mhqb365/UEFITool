@@ -3810,7 +3810,7 @@ USTATUS FfsParser::performSecondPass(const UModelIndex & index)
     
     // Check for compressed lastVtf
     if (model->compressed(lastVtf)) {
-        msg(usprintf("%s: the last VTF appears inside compressed item, the image may be damaged", __FUNCTION__), lastVtf);
+        msg(usprintf("%s: the last VTF appears inside compressed item", __FUNCTION__), lastVtf);
         return U_SUCCESS;
     }
     
@@ -3959,8 +3959,10 @@ USTATUS FfsParser::addInfoRecursive(const UModelIndex & index, bool enableCpuAdd
     
     // Add full size for all elements
     {
-        UINT32 fullSize = (UINT32)model->fullSize(index);
+        UINT32 fullSize = model->fullSize(index);
         model->addInfo(index, usprintf("Full size: %Xh (%u)\n", fullSize, fullSize), false);
+        if (fullSize == 0)
+            msg(usprintf("%s: tree item of zero size", __FUNCTION__), index);
     }
     
     // Add offset
