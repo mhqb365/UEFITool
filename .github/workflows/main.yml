@@ -13,9 +13,9 @@ jobs:
     name: Release build (macOS universal, static Qt 6.5.0)
     runs-on: macos-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Get Qt
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: LongSoft/qt-6-static-universal-macos
           path: qt
@@ -84,7 +84,7 @@ jobs:
     name: Release build (Linux x64, shared Qt 6)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Get Qt
         run: | 
           sudo apt update
@@ -126,7 +126,7 @@ jobs:
     name: Release build (FreeBSD x64, shared Qt 6)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Build on FreeBSD inside Ubuntu VM
         id: test
         uses: cross-platform-actions/action@v0.27.0
@@ -163,9 +163,9 @@ jobs:
     name: Release build (Win32, static Qt 5.6.3)
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v3 
+      - uses: actions/checkout@v6 
       - name: Get Qt 5.6.3
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: LongSoft/qt-5.6.3-static-x86-msvc2017
           path: qt5
@@ -258,9 +258,9 @@ jobs:
     name: Release build (Win64, static Qt 6.5.0)
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v3 
+      - uses: actions/checkout@v6 
       - name: Get Qt 6.5.0
-        uses: actions/checkout@v3
+        uses: actions/checkout@v6
         with:
           repository: LongSoft/qt-6-static-x64-msvc2022
           path: qt6
@@ -308,7 +308,7 @@ jobs:
     name: Meson build system test (shared Qt 5)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Get Deps
         run: | 
           sudo apt update
@@ -322,7 +322,7 @@ jobs:
     name: MinGW compiler test (shared Qt 6.5.0)
     runs-on: windows-2022
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
@@ -339,7 +339,7 @@ jobs:
     name: Fuzzer build test (Clang, Linux x64)
     runs-on: ubuntu-22.04
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Create build directory
         run: cmake -E make_directory ${{runner.workspace}}/build
       - name: Configure everything
@@ -372,7 +372,7 @@ jobs:
     name: Coverity Static Analysis (shared Qt 6.5.0)
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v3
+      - uses: actions/checkout@v6
       - name: Install Qt
         uses: jurplel/install-qt-action@v3
         with:
