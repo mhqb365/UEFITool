@@ -938,6 +938,8 @@ extern const UByteArray INSYDE_FLASH_MAP_REGION_USB_OPTION_ROM_GUID;
 extern const UByteArray INSYDE_FLASH_MAP_REGION_DXE_FV_GUID;
 extern const UByteArray INSYDE_FLASH_MAP_REGION_PEI_FV_GUID;
 extern const UByteArray INSYDE_FLASH_MAP_REGION_UNSIGNED_FV_GUID;
+extern const UByteArray INSYDE_FLASH_MAP_REGION_PASSWORD_GUID;
+extern const UByteArray INSYDE_FLASH_MAP_REGION_OEM_GUID;
 
 //
 // Dell variables

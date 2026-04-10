@@ -301,5 +301,7 @@ UString insydeFlashDeviceMapEntryTypeGuidToUString(const EFI_GUID & guid)
     if (baGuid == INSYDE_FLASH_MAP_REGION_DXE_FV_GUID)           return UString("DXE Firmare Volume");
     if (baGuid == INSYDE_FLASH_MAP_REGION_PEI_FV_GUID)           return UString("PEI Firmare Volume");
     if (baGuid == INSYDE_FLASH_MAP_REGION_UNSIGNED_FV_GUID)      return UString("Unsigned Firmare Volume");
+    if (baGuid == INSYDE_FLASH_MAP_REGION_PASSWORD_GUID)         return UString("Password");
+    if (baGuid == INSYDE_FLASH_MAP_REGION_OEM_GUID)              return UString("OEM");
     return guidToUString(guid);
 }

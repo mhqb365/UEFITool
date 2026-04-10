@@ -132,6 +132,10 @@ extern const UByteArray INSYDE_FLASH_MAP_REGION_PEI_FV_GUID
 ("\xC5\x06\x14\xCF\xEC\x3F\xEB\x47\xA6\xC3\xB7\x1A\x3E\xE0\x0B\x95", 16);
 extern const UByteArray INSYDE_FLASH_MAP_REGION_UNSIGNED_FV_GUID
 ("\xB6\x16\xA0\xF2\x14\xE8\x2E\x40\xA3\x95\x46\xD3\xCF\x75\x26\x4A", 16);
+extern const UByteArray INSYDE_FLASH_MAP_REGION_PASSWORD_GUID
+("\x32\x7E\x02\xC0\xE5\x8E\x17\x4D\x9B\x28\xBA\x50\x16\x6C\x4C\xB4", 16);
+extern const UByteArray INSYDE_FLASH_MAP_REGION_OEM_GUID
+("\xD6\x1A\xD9\x2F\xE3\xD8\xD6\x4F\xB6\x79\x30\x30\xE8\x6A\xE5\x7A", 16);
 
 // GUIDs of GUID-defined sections
 extern const UByteArray EFI_GUIDED_SECTION_CRC32 // FC1BCDB0-7D31-49AA-936A-A4600D9DD083

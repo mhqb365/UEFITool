@@ -1022,10 +1022,29 @@ USTATUS FfsParser::parseRawArea(const UModelIndex & index)
                     for (UINT8 i = 0; i < 16; i++) {
                         info += usprintf("%02X", *(const UINT8*)(entry->region_id().c_str() + i));
                     }
-                    info += usprintf("\nRegion address: %08Xh\nRegion size: %08Xh\nAttributes: %08Xh",
+                    info += usprintf("\nRegion address: %08Xh\nRegion size: %08Xh\nAttributes: %08Xh (",
                                      (UINT32)entry->region_base(),
                                      (UINT32)entry->region_size(),
                                      entry->attributes());
+                    
+                    // Add atributes
+                    if ((entry->attributes() & INSYDE_FLASH_DEVICE_MAP_ENTRY_ATTRIBUTE_MODIFIABLE) == 0) {
+                        info += UString("HashVerified");
+                    }
+                    else if ((entry->attributes() & INSYDE_FLASH_DEVICE_MAP_ENTRY_ATTRIBUTE_MODIFIABLE) == INSYDE_FLASH_DEVICE_MAP_ENTRY_ATTRIBUTE_MODIFIABLE) {
+                        info += UString("HashIgnored");
+                    }
+                    else if (entry->attributes() > INSYDE_FLASH_DEVICE_MAP_ENTRY_ATTRIBUTE_MODIFIABLE) {
+                        info += usprintf(", Unknown %08X", entry->attributes() - INSYDE_FLASH_DEVICE_MAP_ENTRY_ATTRIBUTE_MODIFIABLE);
+                        msg(usprintf("%s: FlashDeviceMap entry with unknown attributes %08X", __FUNCTION__, entry->attributes()), headerIndex);
+                    }
+                    info += UString(")");
+                    
+                    // Add hash
+                    info += UString("\nSHA256: ");
+                    for (UINT16 j = 0; j < (UINT16)body.size(); j++) {
+                        info += usprintf("%02X", (UINT8)body.constData()[j]);
+                    }
                     
                     if ((entry->attributes() & INSYDE_FLASH_DEVICE_MAP_ENTRY_ATTRIBUTE_MODIFIABLE) == 0) {
                         if (!protectedRangeFound) {
