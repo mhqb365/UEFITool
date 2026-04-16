@@ -3,19 +3,19 @@
 UEFITool is a viewer and editor of firmware images conforming to UEFI Platform Interface (PI) Specifications.
 
 ![UEFITool icon](https://raw.githubusercontent.com/LongSoft/UEFITool/new_engine/UEFITool/icons/uefitool_64x64.png "UEFITool icon")  
-![CI Status](https://github.com/LongSoft/UEFITool/actions/workflows/main.yml/badge.svg?branch=new_engine) [![Scan Status](https://scan.coverity.com/projects/17209/badge.svg?flat=1)](https://scan.coverity.com/projects/17209) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=LongSoft_UEFITool&metric=alert_status)](https://sonarcloud.io/summary/new_code?id=LongSoft_UEFITool)
+[![CI Status](https://github.com/LongSoft/UEFITool/actions/workflows/main.yml/badge.svg?branch=new_engine)](https://github.com/LongSoft/UEFITool/actions) [![Scan Status](https://scan.coverity.com/projects/17209/badge.svg?flat=1)](https://scan.coverity.com/projects/17209)
 
 
 ## Very Brief Introduction to UEFI
 
-Unified Extensible Firmware Interface or UEFI is a post-BIOS firmware specification originally written by Intel for Itanium architecture and than adapted for X86 systems.  
-The first EFI-compatible x86 firmwares were used on Apple Macintosh systems in 2006 and PC motherboard vendors started putting UEFI-compatible firmwares on their boards in 2011.  
-In 2015 there are numerous systems using UEFI-compatible firmware including PCs, Macs, Tablets and Smartphones on x86, x86-64 and ARM architectures.  
+Unified Extensible Firmware Interface or UEFI is a post-BIOS firmware specification originally written by Intel for Itanium architecture and then adapted for X86 systems.  
+The first EFI-compatible x86 firmwares were used on Apple Macintosh systems in 2006, PC motherboard vendors started putting UEFI-compatible firmwares on their boards in 2011.  
+Today there are numerous systems using UEFI-compatible firmware including PCs, Intel-based Macs, Tablets and Smartphones on x86, x86-64, arm64 and RISC-V architectures.  
 More information on UEFI is available on [UEFI Forum official site](http://www.uefi.org/faq) and in [Wikipedia](http://en.wikipedia.org/wiki/Unified_Extensible_Firmware_Interface).  
   
 ## Very Brief Introduction to UEFITool
 
-UEFITool is a cross-platform open source application written in C++/Qt, that parses UEFI-compatible firmware image into a tree structure, verifies image's integrity and provides a GUI to manipulate image's elements.  
+UEFITool is a cross-platform open source application written in C++/Qt, that parses UEFI-compatible firmware image into a tree structure, verifies its integrity and provides a GUI to manipulate its elements.  
 Project development started in the middle of 2013 because of the lack of cross-platform open source utilities for tinkering with UEFI images.  
 
 In the beginning of 2015 the major refactoring round was started to make the program compatible with newer UEFI features including FFSv3 volumes and fixed image elements. 
@@ -39,10 +39,11 @@ Right now there are some alternatives to UEFITool that you could find useful too
 * **[PhoenixTool](https://forums.mydigitallife.net/threads/tool-to-insert-replace-slic-in-phoenix-insyde-dell-efi-bioses.13194)** by [AndyP](https://forums.mydigitallife.net/members/andyp.39295). Windows-only freeware GUI application written in C#. Used mostly for SLIC-related modifications, but it not limited to this task. Requires Microsoft .NET 3.5 to work properly. Supports unpacking firmware images from various vendor-specific formats like encrypted HP update files and Dell installers.
 * **[uefi-firmware-parser](https://github.com/theopolis/uefi-firmware-parser)** by [Teddy Reed](https://github.com/theopolis). Cross-platform open source console application written in Python. Very tinker-friendly due to use of Python. Can be used in scripts to automate firmware patching.
 * **[Chipsec](https://github.com/chipsec/chipsec)** by Intel. Cross-platform partially open source console application written in Python and C. Can be used to test Intel-based platforms for various security-related misconfigurations, but also has NVRAM parser and other components aimed to firmware modification.
+* **[CERT UEFI Parser](https://pypi.org/project/cert-uefi-parser/)** by CERT. Open source toolset for parsing firmware images written in Python.
 
 ## Installation
 
-You can either use [pre-built binaries](https://github.com/LongSoft/UEFITool/releases) or build a binary yourself.  
+You can either use [pre-built binaries](https://github.com/LongSoft/UEFITool/releases) or build the binaries yourself.  
 * To build a binary that uses Qt library (UEFITool) you need a C++ compiler and an instance of [Qt5 or Qt6](https://www.qt.io) library. Install both of them, get the sources, generate makefiles using qmake (`qmake ./UEFITool/uefitool.pro`) and use your system's make command on that generated files (i.e. `nmake release`, `make release` and so on). Qt6-based builds can also use CMAKE as an altearnative build system.
 * To build a binary that doesn't use Qt (UEFIExtract, UEFIFind), you need a C++ compiler and [CMAKE](https://cmake.org) utility to generate a makefile for your OS and build environment. Install both of them, get the sources, generate makefiles using cmake (`cmake UEFIExtract`) and use your system's make command on that generated files (i.e. `nmake release`, `make release` and so on). Non-Qt builds can also use Meson as an alternative build system.
 
