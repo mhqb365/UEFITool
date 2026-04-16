@@ -972,6 +972,7 @@ void UEFITool::resetDocks()
         dock->widget()->setContentsMargins(0, 0, 0, 0);
         dock->widget()->layout()->setContentsMargins(margins);
         dock->setWindowFlags(dock->windowFlags() | Qt::WindowTitleHint);
+        dock->setHidden(false);
         updateDock(dock);
     }
 }
