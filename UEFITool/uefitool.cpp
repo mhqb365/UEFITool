@@ -1351,11 +1351,11 @@ void UEFITool::readSettings()
 {
     QSettings settings(this);
     restoreGeometry(settings.value("mainWindow/geometry").toByteArray());
-    QByteArray state = settings.value("mainWindow/windowState").toByteArray();
-    if (state.size() > 0x100)   // stupid check for transition from classic UI to docks
-        restoreState(state);
-    else
+    if (false == restoreState(settings.value("mainWindow/windowState").toByteArray(), 1)) { // Manually update the state version to 1
+        // We need to reset the UI for state version transition here to prevent a possible crash
         resetDocks();
+    }
+    
     ui->structureTreeView->setColumnWidth(0, settings.value("tree/columnWidth0", ui->structureTreeView->columnWidth(0)).toInt());
     ui->structureTreeView->setColumnWidth(1, settings.value("tree/columnWidth1", ui->structureTreeView->columnWidth(1)).toInt());
     ui->structureTreeView->setColumnWidth(2, settings.value("tree/columnWidth2", ui->structureTreeView->columnWidth(2)).toInt());
@@ -1395,7 +1395,7 @@ void UEFITool::writeSettings()
 {
     QSettings settings(this);
     settings.setValue("mainWindow/geometry", saveGeometry());
-    settings.setValue("mainWindow/windowState", saveState());
+    settings.setValue("mainWindow/windowState", saveState(1)); // Manually update the state version to 1
     settings.setValue("tree/columnWidth0", ui->structureTreeView->columnWidth(0));
     settings.setValue("tree/columnWidth1", ui->structureTreeView->columnWidth(1));
     settings.setValue("tree/columnWidth2", ui->structureTreeView->columnWidth(2));
