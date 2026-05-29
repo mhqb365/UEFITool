@@ -889,10 +889,10 @@
   </action>
   <action name="actionLoadDefaultGuidDatabase">
    <property name="text">
-    <string>Load &amp;default GUID database</string>
+    <string>Load de&amp;fault GUID database</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Alt+D</string>
+    <string>Ctrl+Alt+F</string>
    </property>
   </action>
   <action name="actionExportDiscoveredGuids">
@@ -900,10 +900,10 @@
     <bool>false</bool>
    </property>
    <property name="text">
-    <string>&amp;Export discovered GUIDs...</string>
+    <string>Export disc&amp;overed GUIDs...</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Alt+E</string>
+    <string>Ctrl+Alt+O</string>
    </property>
   </action>
   <action name="actionCopyItemName">
@@ -1099,7 +1099,7 @@
     <string>&amp;Reset docks layout</string>
    </property>
    <property name="shortcut">
-    <string>Ctrl+Shift+D</string>
+    <string>Ctrl+Shift+L</string>
    </property>
   </action>
  </widget>
