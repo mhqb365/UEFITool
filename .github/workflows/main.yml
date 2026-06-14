@@ -367,31 +367,32 @@ jobs:
           path: ${{runner.workspace}}/dist/*.zip
 
 # Static Analysis
-  build_analyze_linux_coverity:
-    env:
-      PROJECT_TYPE: TOOL
-      JOB_TYPE: COVERITY
-    if: github.repository_owner == 'LongSoft' && github.event_name != 'pull_request'
-    name: Coverity Static Analysis (shared Qt 6.5.0)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v6
-      - name: Install Qt
-        uses: jurplel/install-qt-action@v3
-        with:
-          version: '6.5.0'
-          host: 'linux'
-          target: 'desktop'
-      - name: Create build directory
-        run: cmake -E make_directory ${{runner.workspace}}/build
-      - name: Configure everything
-        working-directory: ${{runner.workspace}}/build
-        run: cmake ../UEFITool
-      - name: Run Coverity
-        working-directory: ${{runner.workspace}}/build
-        run: |
-          src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/coverity/covstrap-linux.sh) && eval "$src" || exit 1
-        env:
-          COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
-          COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
-          COVERITY_BUILD_COMMAND: cmake --build .
+# Coverity is currently broken, stub it out for now
+#  build_analyze_linux_coverity:
+#    env:
+#      PROJECT_TYPE: TOOL
+#      JOB_TYPE: COVERITY
+#    if: github.repository_owner == 'LongSoft' && github.event_name != 'pull_request'
+#    name: Coverity Static Analysis (shared Qt 6.5.0)
+#    runs-on: ubuntu-latest
+#    steps:
+#      - uses: actions/checkout@v6
+#      - name: Install Qt
+#        uses: jurplel/install-qt-action@v3
+#        with:
+#          version: '6.5.0'
+#          host: 'linux'
+#          target: 'desktop'
+#      - name: Create build directory
+#        run: cmake -E make_directory ${{runner.workspace}}/build
+#      - name: Configure everything
+#        working-directory: ${{runner.workspace}}/build
+#        run: cmake ../UEFITool
+#      - name: Run Coverity
+#        working-directory: ${{runner.workspace}}/build
+#        run: |
+#          src=$(/usr/bin/curl -Lfs https://raw.githubusercontent.com/acidanthera/ocbuild/master/coverity/covstrap-linux.sh) && eval "$src" || exit 1
+#        env:
+#          COVERITY_SCAN_TOKEN: ${{ secrets.COVERITY_SCAN_TOKEN }}
+#          COVERITY_SCAN_EMAIL: ${{ secrets.COVERITY_SCAN_EMAIL }}
+#          COVERITY_BUILD_COMMAND: cmake --build .
