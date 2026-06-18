@@ -28,43 +28,18 @@ seq:
   type: u1
 - id: fd_base_address
   type: u8
-- id: extensions
-  type: fdm_extensions
-  size: num_extensions * sizeof<fdm_extension>
-  if: revision > 2
-- id: board_ids
-  type: fdm_board_ids
-  if: revision > 2 and extensions.extensions[1].count > 0
-#TODO: need to find a sample with revision == 4 and extensions.extensions[2].count > 0
-- id: entries
+instances:
+ valid_entry_size:
+  value: 0x54
+ valid_entry_format:
+  value: 0
+ entries:
+  pos: data_offset
   type: fdm_entries
   size: store_size - data_offset
+  if: entry_size == valid_entry_size and entry_format == valid_entry_format
 
 types:
- fdm_extensions:
-  seq:
-  - id: extensions
-    type: fdm_extension
-    repeat: eos
-
- fdm_extension:
-  seq:
-  - id: offset
-    type: u2
-  - id: count
-    type: u2
-    
- fdm_board_ids:
-  seq:
-  - id: region_index
-    type: u4
-  - id: num_board_ids
-    type: u4
-  - id: board_ids
-    type: u8
-    repeat: expr
-    repeat-expr: num_board_ids
- 
  fdm_entries:
   seq:
    - id: entries
@@ -84,8 +59,7 @@ types:
   - id: attributes
     type: u4
   - id: hash
-    size: _parent._parent.entry_size - 16 - 16 - 8 - 8 - 4
+    size: 0x20
   instances:
    region_base:
      value: _root.fd_base_address.as<u4> + region_offset.as<u4>
-     

@@ -245,7 +245,7 @@ USTATUS FfsFinder::findTextPattern(const UModelIndex & index, const UString & pa
                 name = model->name(parentFileIndex) + UString("/.../") + name;
             }
 
-            msg(UString("Text \"") + UString(pattern) + UString("\" found in ") + name + UString(" information"), index);
+            msg((unicode ? UString("Unicode") : UString("ASCII")) + UString(" text \"") + UString(pattern) + UString("\" found in ") + name + UString(" information"), index);
             ret = U_SUCCESS;
         }
         if (mode == SEARCH_MODE_INFO)
