@@ -995,7 +995,7 @@ USTATUS FfsParser::parseRawArea(const UModelIndex & index)
                 
                 // Check if we can add entries
                 if (parsed._is_null_entries()) {
-                    msg(usprintf("%s: FDM store with unknown entry format or size", __FUNCTION__), headerIndex);
+                    msg(usprintf("%s: FlashDeviceMap store with unknown entry format or size", __FUNCTION__), headerIndex);
                 }
                 else {
                     // Add entries
