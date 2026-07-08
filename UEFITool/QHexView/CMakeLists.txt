@@ -5,6 +5,7 @@ project(QHexView)
 option(QHEXVIEW_BUILD_EXAMPLE "Build Example Application" OFF)
 option(QHEXVIEW_USE_QT5 "Enable Qt5 build" OFF)
 option(QHEXVIEW_ENABLE_DIALOGS "BuiltIn dialogs" OFF)
+option(QHEXVIEW_ASAN "Enable ASAN" OFF)
 
 if(QHEXVIEW_USE_QT5)
     find_package(Qt5 REQUIRED COMPONENTS Widgets)
@@ -42,7 +43,7 @@ target_sources(${PROJECT_NAME}
         include/QHexView/model/buffer/qmappedfilebuffer.h
         include/QHexView/model/buffer/qmemorybuffer.h
         include/QHexView/model/buffer/qmemoryrefbuffer.h
-        include/QHexView/model/commands/hexcommand.h
+        include/QHexView/model/commands/hexviewcommand.h
         include/QHexView/model/commands/insertcommand.h
         include/QHexView/model/commands/removecommand.h
         include/QHexView/model/commands/replacecommand.h
@@ -56,7 +57,7 @@ target_sources(${PROJECT_NAME}
         include/QHexView/qhexview.h
 
     PRIVATE 
-        src/model/commands/hexcommand.cpp
+        src/model/commands/hexviewcommand.cpp
         src/model/commands/insertcommand.cpp
         src/model/commands/removecommand.cpp
         src/model/commands/replacecommand.cpp
@@ -83,6 +84,12 @@ if(QHEXVIEW_ENABLE_DIALOGS)
     target_compile_definitions(${PROJECT_NAME} 
         PUBLIC
             QHEXVIEW_ENABLE_DIALOGS
+    )
+endif()
+
+if(QHEXVIEW_ASAN)
+    target_compile_options(QHexView PRIVATE
+        $<$<CONFIG:Debug>:$<IF:$<CXX_COMPILER_ID:MSVC>,/fsanitize=address,-fsanitize=address>>
     )
 endif()
 

@@ -5,20 +5,28 @@ QHexDelegate::QHexDelegate(QObject* parent): QObject{parent} {}
 
 QString QHexDelegate::addressHeader(const QHexView* hexview) const {
     Q_UNUSED(hexview);
-    return QString();
+    return QString{};
 }
 
 QString QHexDelegate::hexHeader(const QHexView* hexview) const {
     Q_UNUSED(hexview);
-    return QString();
+    return QString{};
 }
 
 QString QHexDelegate::asciiHeader(const QHexView* hexview) const {
     Q_UNUSED(hexview);
-    return QString();
+    return QString{};
 }
 
-void QHexDelegate::renderAddress(quint64 address, QTextCharFormat& cf,
+QString QHexDelegate::comment(quint64 offset, quint8 b,
+                              const QHexView* hexview) const {
+    Q_UNUSED(offset);
+    Q_UNUSED(b);
+    Q_UNUSED(hexview);
+    return QString{};
+}
+
+void QHexDelegate::renderAddress(quint64 address, QHexCharFormat& cf,
                                  const QHexView* hexview) const {
     Q_UNUSED(address);
     Q_UNUSED(hexview);
@@ -26,23 +34,8 @@ void QHexDelegate::renderAddress(quint64 address, QTextCharFormat& cf,
     Q_UNUSED(hexview);
 }
 
-void QHexDelegate::renderHeader(QTextBlockFormat& bf,
-                                const QHexView* hexview) const {
-    Q_UNUSED(bf);
-    Q_UNUSED(hexview);
-}
-
-void QHexDelegate::renderHeaderPart(const QString& s, QHexArea area,
-                                    QTextCharFormat& cf,
-                                    const QHexView* hexview) const {
-    Q_UNUSED(s);
-    Q_UNUSED(area);
-    Q_UNUSED(cf);
-    Q_UNUSED(hexview);
-}
-
-bool QHexDelegate::render(quint64 offset, quint8 b, QTextCharFormat& outcf,
-                          const QHexView* hexview) const {
+bool QHexDelegate::renderByte(quint64 offset, quint8 b, QHexCharFormat& outcf,
+                              const QHexView* hexview) const {
     Q_UNUSED(offset);
     Q_UNUSED(b);
     Q_UNUSED(outcf);
