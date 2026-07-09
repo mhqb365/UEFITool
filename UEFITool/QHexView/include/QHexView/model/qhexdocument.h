@@ -4,6 +4,7 @@
 #include <QHexView/model/qhexchanges.h>
 #include <QHexView/model/qhexmetadata.h>
 #include <QUndoStack>
+#include <QtTypes>
 
 class QHexCursor;
 
