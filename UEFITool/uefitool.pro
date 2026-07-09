@@ -78,11 +78,12 @@ HEADERS += uefitool.h \
  QHexView/include/QHexView/model/buffer/qdevicebuffer.h \
  QHexView/include/QHexView/model/buffer/qmemorybuffer.h \
  QHexView/include/QHexView/model/buffer/qmappedfilebuffer.h \
- QHexView/include/QHexView/model/commands/hexcommand.h \
+ QHexView/include/QHexView/model/commands/hexviewcommand.h \
  QHexView/include/QHexView/model/commands/insertcommand.h \
  QHexView/include/QHexView/model/commands/removecommand.h \
  QHexView/include/QHexView/model/commands/replacecommand.h \
  QHexView/include/QHexView/model/qhexcursor.h \
+ QHexView/include/QHexView/model/qhexchanges.h \
  QHexView/include/QHexView/model/qhexdelegate.h \
  QHexView/include/QHexView/model/qhexdocument.h \
  QHexView/include/QHexView/model/qhexmetadata.h \
@@ -179,7 +180,7 @@ SOURCES += uefitool_main.cpp \
  QHexView/src/model/buffer/qdevicebuffer.cpp \
  QHexView/src/model/buffer/qmemorybuffer.cpp \
  QHexView/src/model/buffer/qmappedfilebuffer.cpp \
- QHexView/src/model/commands/hexcommand.cpp \
+ QHexView/src/model/commands/hexviewcommand.cpp \
  QHexView/src/model/commands/insertcommand.cpp \
  QHexView/src/model/commands/removecommand.cpp \
  QHexView/src/model/commands/replacecommand.cpp \
