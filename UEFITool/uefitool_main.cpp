@@ -52,8 +52,18 @@ public:
         tool->setProgramPath(arguments().at(0));
         if (arguments().length() > 1)
             tool->openImageFile(arguments().at(1));
+        
+        // A workaround for several Qt bugs that either prevent the wingow geometry from restoring (macOS)
+        // or crash the app on startup (Void Linux)
+#if defined Q_OS_MACOS
+        // Reverse the usual order of calls here to ensure that the window geometry is properly restored in macOS
         tool->show();
         tool->readSettings();
+#else
+        // Windows, Linux and everything else should work fine with the usual order
+        tool->readSettings();
+        tool->show();
+#endif
         
         return exec();
     }
