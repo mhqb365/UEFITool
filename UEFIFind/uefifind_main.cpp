@@ -76,13 +76,13 @@ int main(int argc, char *argv[])
         // Parse input file
         result = w.init(inputArg);
         if (result)
-            return result;
+            return (int)result;
 
         // Go find the supplied pattern
         UString found;
         result = w.find(mode, count, patternArg, found);
         if (result)
-            return result;
+            return (int)result;
 
         // Nothing is found
         if (found.isEmpty())
@@ -112,7 +112,7 @@ int main(int argc, char *argv[])
         // Parse input file
         result = w.init(inputArg);
         if (result)
-            return result;
+            return (int)result;
 
         // Perform searches
         bool somethingFound = false;

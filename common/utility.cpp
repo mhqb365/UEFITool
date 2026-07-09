@@ -621,7 +621,7 @@ USTATUS brotliDecompress(const UByteArray& input, UByteArray& output)
             
             ret = BrotliDecoderDecompressStream(decoder, &avail_in, &next_in, &avail_out, &next_out, NULL);
             if ((ret == BROTLI_DECODER_RESULT_NEEDS_MORE_OUTPUT || ret == BROTLI_DECODER_RESULT_SUCCESS) && avail_out != sizeof(out))
-                output += UByteArray((char*)out, sizeof(out) - avail_out);
+                output += UByteArray((char*)out, (UINT32)(sizeof(out) - avail_out));
         }
     }
     

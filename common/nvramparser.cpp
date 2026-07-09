@@ -273,7 +273,7 @@ processing_done:
 
                 // Add hash
                 if (!entry_body->_is_null_extended_header_hash()) {
-                    UByteArray hash = UByteArray(entry_body->extended_header_hash().c_str(), entry_body->extended_header_hash().size());
+                    UByteArray hash = UByteArray(entry_body->extended_header_hash().c_str(), (UINT32)entry_body->extended_header_hash().size());
                     info += UString("\nHash: ") + UString(hash.toHex().constData());
                 }
             }

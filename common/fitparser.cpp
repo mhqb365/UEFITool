@@ -476,7 +476,7 @@ USTATUS FitParser::parseFitEntryBootGuardKeyManifest(const UByteArray & keyManif
         kmInfo += "\n";
         // Calculate the hashes of public key modulus + exponent
         UByteArray dataToHash;
-        dataToHash += UByteArray(key_signature->public_key()->modulus().data(), key_signature->public_key()->modulus().length());
+        dataToHash += UByteArray(key_signature->public_key()->modulus().data(), (UINT32)key_signature->public_key()->modulus().length());
         UINT32 exponent = key_signature->public_key()->exponent();
         dataToHash += UByteArray((const char*)&exponent, sizeof(exponent));
         sha256(dataToHash.constData(), dataToHash.size(), hash);
@@ -809,7 +809,7 @@ USTATUS FitParser::parseFitEntryBootGuardBootPolicy(const UByteArray & bootPolic
                                 range.Size = current_element->size();
                                 range.Type = PROTECTED_RANGE_VENDOR_HASH_MICROSOFT_PMDA;
                                 range.AlgorithmId = TCG_HASH_ALGORITHM_ID_SHA256;
-                                range.Hash = UByteArray(current_element->hash().data(), current_element->hash().size());
+                                range.Hash = UByteArray(current_element->hash().data(), (UINT32)current_element->hash().size());
                                 ffsParser->protectedRanges.push_back(range);
                             }
                         }
@@ -838,7 +838,7 @@ USTATUS FitParser::parseFitEntryBootGuardBootPolicy(const UByteArray & bootPolic
                                 range.Size = current_element->size();
                                 range.Type = PROTECTED_RANGE_VENDOR_HASH_MICROSOFT_PMDA;
                                 range.AlgorithmId = current_element->hash()->hash_algorithm_id();
-                                range.Hash = UByteArray(current_element->hash()->hash().data(), current_element->hash()->hash().size());
+                                range.Hash = UByteArray(current_element->hash()->hash().data(), (UINT32)current_element->hash()->hash().size());
                                 ffsParser->protectedRanges.push_back(range);
                             }
                         }

@@ -365,7 +365,7 @@ struct CBString : public tagbstring {
 	const char *toLocal8Bit() const { return *this; }
 	bool contains(const char *str) { return find(str) >= 0; }
     bool startsWith(const char *str) { return find(str) == 0; }
-	bool endsWith(const char *str) { int len = strlen(str); return (slen >= len && (find(str, slen - len) == (slen - len))); }
+	bool endsWith(const char *str) { int len = (int)strlen(str); return (slen >= len && (find(str, slen - len) == (slen - len))); }
 	bool isEmpty() const { return slen == 0; }
 	void clear() { *this = ""; }
 	CBString left(int len) const { return midstr(0, len); }
