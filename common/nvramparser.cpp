@@ -700,13 +700,17 @@ not_vss2:
                 goto not_ftw;
             }
             // Determine store size
-            UINT32 storeSize;
+            UINT64 storeSize;
             if (storeHeader->WriteQueueSize % 0x10 == 4) {
                 storeSize = sizeof(EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER32) + storeHeader->WriteQueueSize;
             }
             else if (storeHeader->WriteQueueSize % 0x10 == 0) {
+                if (volumeBodySize - storeOffset < sizeof(EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER64)) {
+                    // No need to parse further, the rest of the volume is too small
+                    goto not_ftw;
+                }
                 const EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER64* storeHeader64 = (const EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER64*)(volumeBody.constData() + storeOffset);
-                storeSize = (UINT32)(sizeof(EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER64) + storeHeader64->WriteQueueSize);
+                storeSize = sizeof(EFI_FAULT_TOLERANT_WORKING_BLOCK_HEADER64) + storeHeader64->WriteQueueSize;
             }
             else {
                 // No need to parse further, unknown FTW store size
@@ -753,7 +757,7 @@ not_vss2:
             }
             
             // Construct body
-            body = volumeBody.mid(storeOffset + header.size(), storeSize - header.size());
+            body = volumeBody.mid(storeOffset + header.size(), (UINT32)storeSize - header.size());
             
             // Add info
             name = UString("FTW store");
