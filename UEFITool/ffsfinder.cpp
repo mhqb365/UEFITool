@@ -235,10 +235,16 @@ USTATUS FfsFinder::findTextPattern(const UModelIndex & index, const UString & pa
 
     if (mode == SEARCH_MODE_INFO || mode == SEARCH_MODE_ALL) {
         UString info = model->info(index);
-        if (!info.isEmpty() && info.indexOf(pattern, 0, caseSensitive) >= 0) {
+        UString searchPattern;
+        if (unicode)
+            searchPattern = UString::fromLatin1((const char*)pattern.utf16(), pattern.length() * 2);
+        else
+            searchPattern = pattern;
+        
+        if (!info.isEmpty() && info.indexOf(searchPattern, 0, caseSensitive) >= 0) {
             UModelIndex parentFileIndex = model->findParentOfType(index, Types::File);
             UString name = model->name(index);
-            if (model->parent(index) == parentFileIndex) {
+            if (parentFileIndex.isValid() && model->parent(index) == parentFileIndex) {
                 name = model->name(parentFileIndex) + UString("/") + name;
             }
             else if (parentFileIndex.isValid()) {
@@ -278,7 +284,7 @@ USTATUS FfsFinder::findTextPattern(const UModelIndex & index, const UString & pa
     while ((offset = (int)data.indexOf(searchPattern, (int)(offset + 1), caseSensitive)) >= 0) {
         UModelIndex parentFileIndex = model->findParentOfType(index, Types::File);
         UString name = model->name(index);
-        if (model->parent(index) == parentFileIndex) {
+        if (parentFileIndex.isValid() && model->parent(index) == parentFileIndex) {
             name = model->name(parentFileIndex) + UString("/") + name;
         }
         else if (parentFileIndex.isValid()) {
