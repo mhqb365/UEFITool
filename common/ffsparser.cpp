@@ -1432,8 +1432,8 @@ USTATUS FfsParser::parseVolumeHeader(const UByteArray & volume, const UINT32 loc
     // Check for AppleCRC32 and UsedSpace in ZeroVector
     bool hasAppleCrc32 = false;
     UINT32 volumeSize = (UINT32)volume.size();
-    UINT32 appleCrc32 = *(UINT32*)(volume.constData() + 8);
-    UINT32 usedSpace = *(UINT32*)(volume.constData() + 12);
+    UINT32 appleCrc32 = readUnaligned((UINT32*)(volume.constData() + 8));
+    UINT32 usedSpace =  readUnaligned((UINT32*)(volume.constData() + 12));
     if (appleCrc32 != 0) {
         // Calculate CRC32 of the volume body
         UINT32 crc = (UINT32)crc32(0, (const UINT8*)(volume.constData() + volumeHeader->HeaderLength), volumeSize - volumeHeader->HeaderLength);
@@ -2031,7 +2031,37 @@ USTATUS FfsParser::parseVolumeBody(const UModelIndex & index, const bool probe)
         
         // Move to next file
         fileOffset += fileSize;
-        // TODO: check that alignment bytes are all of erase polarity bit, warn if not so
+        
+        // Check for alignment bytes after the current file
+        // Files must be aligned to 8 bytes boundary inside the FFS volume
+        // The alignment byte should be equal to 0xFF (erasePolarity = 1) or 0x00 (erasePolarity = 0)
+        UINT32 numAlignmentBytes = ALIGN8(fileOffset) - fileOffset;
+        
+        // We might be at the very end of the volume, need a check for it
+        if (volumeBodySize < fileOffset + fileSize + numAlignmentBytes) {
+            numAlignmentBytes = volumeBodySize - fileOffset - fileSize;
+        }
+        
+        if (numAlignmentBytes > 0) {
+            UByteArray alignmentBytes = volumeBody.mid(fileOffset + fileSize, numAlignmentBytes);
+            // Check alignment bytes to be sane
+            if (!isUniformByte(alignmentBytes, emptyByte)) {
+                msg(usprintf("%s: unexpected bytes found in alignment area, should all be %s", __FUNCTION__, emptyByte ? "0xFF" : "0x00"), fileIndex);
+                
+                // Add unexpected alignment bytes to tree item info
+                UString info;
+                for (UINT8 i = 0; i < numAlignmentBytes; i++) {
+                    info += usprintf("%02X ", alignmentBytes[i]);
+                }
+                info = UString("Alignment bytes: ") + info + "\n";
+                model->addInfo(fileIndex, info);
+            }
+            
+            // Store alignment bytes for upholding parsing pre/post-conditions (aka "every byte is accounted for")
+            model->setAlignmentBytes(fileIndex, alignmentBytes);
+        }
+        
+        // Adjust fileOffset
         fileOffset = ALIGN8(fileOffset);
     }
     
@@ -2505,8 +2535,8 @@ USTATUS FfsParser::parseSections(const UByteArray & sections, const UModelIndex 
         return U_INVALID_PARAMETER;
     
     // Search for and parse all sections
-    UINT32 bodySize = (UINT32)sections.size();
-    UINT32 headerSize = model->headerSize(index);
+    UINT32 fileBodySize = (UINT32)sections.size();
+    UINT32 fileHeaderSize = model->headerSize(index);
     UINT32 sectionOffset = 0;
     USTATUS result = U_SUCCESS;
     
@@ -2521,20 +2551,20 @@ USTATUS FfsParser::parseSections(const UByteArray & sections, const UModelIndex 
     
     // Iterate over sections
     UINT32 sectionSize = 0;
-    while (sectionOffset < bodySize) {
+    while (sectionOffset < fileBodySize) {
         // Get section size
         sectionSize = getSectionSize(sections, sectionOffset, ffsVersion);
         
         // Check section size to be sane
         if (sectionSize < sizeof(EFI_COMMON_SECTION_HEADER)
-            || sectionSize > (bodySize - sectionOffset)) {
+            || sectionSize > (fileBodySize - sectionOffset)) {
             // Final parsing
             if (!probe) {
                 // Add padding to fill the rest of sections
                 UByteArray padding = sections.mid(sectionOffset);
 
                 // Add tree item
-                UModelIndex dataIndex = model->addItem(headerSize + sectionOffset, Types::Padding, Subtypes::DataPadding, UString("Non-UEFI data"), UString(), UString(), UByteArray(), padding, UByteArray(), Fixed, index);
+                UModelIndex dataIndex = model->addItem(fileHeaderSize + sectionOffset, Types::Padding, Subtypes::DataPadding, UString("Non-UEFI data"), UString(), UString(), UByteArray(), padding, UByteArray(), Fixed, index);
                 
                 // Show message
                 msg(usprintf("%s: non-UEFI data found in sections area", __FUNCTION__), dataIndex);
@@ -2550,7 +2580,7 @@ USTATUS FfsParser::parseSections(const UByteArray & sections, const UModelIndex 
         
         // Parse section header
         UModelIndex sectionIndex;
-        result = parseSectionHeader(sections.mid(sectionOffset, sectionSize), headerSize + sectionOffset, index, sectionIndex, probe);
+        result = parseSectionHeader(sections.mid(sectionOffset, sectionSize), fileHeaderSize + sectionOffset, index, sectionIndex, probe);
         if (result) {
             if (!probe)
                 msg(usprintf("%s: section header parsing failed with error ", __FUNCTION__) + errorCodeToUString(result), index);
@@ -2560,7 +2590,37 @@ USTATUS FfsParser::parseSections(const UByteArray & sections, const UModelIndex 
         
         // Move to next section
         sectionOffset += sectionSize;
-        // TODO: verify that alignment bytes are actually zero as per PI spec
+    
+        // Check for alignment bytes after the current section
+        // Sections must be aligned to 4 bytes boundary inside the FFS file
+        // The alignment byte should be equal to 0x00 regardless of erasePolarity
+        UINT32 numAlignmentBytes = ALIGN4(sectionOffset) - sectionOffset;
+        
+        // We might be at the very end of the file, need a check for it
+        if (fileBodySize < sectionOffset + sectionSize + numAlignmentBytes) {
+            numAlignmentBytes = fileBodySize - sectionOffset - sectionSize;
+        }
+        
+        if (numAlignmentBytes > 0) {
+            UByteArray alignmentBytes = sections.mid(sectionOffset + sectionSize, numAlignmentBytes);
+            // Check alignment bytes to be sane
+            if (!isUniformByte(alignmentBytes, 0x00)) {
+                msg(usprintf("%s: unexpected bytes found in alignment area, should all be 0x00", __FUNCTION__), sectionIndex);
+                
+                // Add unexpected alignment bytes to tree item info
+                UString info;
+                for (UINT8 i = 0; i < numAlignmentBytes; i++) {
+                    info += usprintf("%02X ", alignmentBytes[i]);
+                }
+                info = UString("Alignment bytes: ") + info + "\n";
+                model->addInfo(sectionIndex, info);
+            }
+            
+            // Store alignment bytes for upholding parsing pre/post-conditions (aka "every byte is accounted for")
+            model->setAlignmentBytes(sectionIndex, alignmentBytes);
+        }
+        
+        // Adjust sectionOffset
         sectionOffset = ALIGN4(sectionOffset);
     }
     

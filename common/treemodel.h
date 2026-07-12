@@ -208,6 +208,10 @@ public:
     bool hasEmptyParsingData(const UModelIndex &index) const;
     void setParsingData(const UModelIndex &index, const UByteArray &pdata);
 
+    UByteArray alignmentBytes(const UModelIndex &index) const;
+    bool hasEmptyAlignmentBytes(const UModelIndex &index) const;
+    void setAlignmentBytes(const UModelIndex &index, const UByteArray &abytes);
+    
     UModelIndex addItem(const UINT32 offset, const UINT8 type, const UINT8 subtype,
         const UString & name, const UString & text, const UString & info,
         const UByteArray & header, const UByteArray & body, const UByteArray & tail,

@@ -511,6 +511,34 @@ void TreeModel::setParsingData(const UModelIndex &index, const UByteArray &data)
     emit dataChanged(this->index(0, 0), index);
 }
 
+UByteArray TreeModel::alignmentBytes(const UModelIndex &index) const
+{
+    if (!index.isValid())
+        return UByteArray();
+    
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    return item->alignmentBytes();
+}
+
+bool TreeModel::hasEmptyAlignmentBytes(const UModelIndex &index) const
+{
+    if (!index.isValid())
+        return true;
+    
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    return item->hasEmptyAlignmentBytes();
+}
+
+void TreeModel::setAlignmentBytes(const UModelIndex &index, const UByteArray &data)
+{
+    if (!index.isValid())
+        return;
+    
+    TreeItem *item = static_cast<TreeItem*>(index.internalPointer());
+    item->setAlignmentBytes(data);
+    emit dataChanged(this->index(0, 0), index);
+}
+
 UByteArray TreeModel::uncompressedData(const UModelIndex &index) const
 {
     if (!index.isValid())

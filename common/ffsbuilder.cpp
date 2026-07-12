@@ -364,8 +364,6 @@ USTATUS FfsBuilder::buildNonUefiData(const UModelIndex & index, UByteArray & dat
         return erase(index, data);
     }
     
-    // TODO: rebuild properly
-    
     msg(UString("buildNoUefiData: unexpected action " + actionTypeToUString(model->action(index))), index);
     return U_NOT_IMPLEMENTED;
 }
