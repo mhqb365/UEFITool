@@ -2032,33 +2032,34 @@ USTATUS FfsParser::parseVolumeBody(const UModelIndex & index, const bool probe)
         // Move to next file
         fileOffset += fileSize;
         
-        // Check for alignment bytes after the current file
-        // Files must be aligned to 8 bytes boundary inside the FFS volume
-        // The alignment byte should be equal to 0xFF (erasePolarity = 1) or 0x00 (erasePolarity = 0)
-        UINT32 numAlignmentBytes = ALIGN8(fileOffset) - fileOffset;
-        
-        // We might be at the very end of the volume, need a check for it
-        if (volumeBodySize < fileOffset + fileSize + numAlignmentBytes) {
-            numAlignmentBytes = volumeBodySize - fileOffset - fileSize;
-        }
-        
-        if (numAlignmentBytes > 0) {
-            UByteArray alignmentBytes = volumeBody.mid(fileOffset + fileSize, numAlignmentBytes);
-            // Check alignment bytes to be sane
-            if (!isUniformByte(alignmentBytes, emptyByte)) {
-                msg(usprintf("%s: unexpected bytes found in alignment area, should all be %s", __FUNCTION__, emptyByte ? "0xFF" : "0x00"), fileIndex);
-                
-                // Add unexpected alignment bytes to tree item info
-                UString info;
-                for (UINT8 i = 0; i < numAlignmentBytes; i++) {
-                    info += usprintf("%02X ", alignmentBytes[i]);
-                }
-                info = UString("Alignment bytes: ") + info + "\n";
-                model->addInfo(fileIndex, info);
+        if (!probe) {
+            // Check for alignment bytes after the current file
+            // Files must be aligned to 8 bytes boundary inside the FFS volume
+            // The alignment byte should be equal to 0xFF (erasePolarity = 1) or 0x00 (erasePolarity = 0)
+            UINT32 numAlignmentBytes = ALIGN8(fileOffset) - fileOffset;
+            
+            // We might be at the very end of the volume, need a check for it
+            if (volumeBodySize < fileOffset + numAlignmentBytes) {
+                numAlignmentBytes = volumeBodySize - fileOffset;
             }
             
-            // Store alignment bytes for upholding parsing pre/post-conditions (aka "every byte is accounted for")
-            model->setAlignmentBytes(fileIndex, alignmentBytes);
+            if (numAlignmentBytes > 0) {
+                UByteArray alignmentBytes = volumeBody.mid(fileOffset, numAlignmentBytes);
+                // Check alignment bytes to be sane
+                if (!isUniformByte(alignmentBytes, emptyByte)) {
+                    msg(usprintf("%s: unexpected bytes found in file alignment area, should all be %s", __FUNCTION__, emptyByte ? "0xFF" : "0x00"), fileIndex);
+                    
+                    // Add unexpected alignment bytes to tree item info
+                    UString info;
+                    for (UINT8 i = 0; i < numAlignmentBytes; i++) {
+                        info += usprintf("%02X ", alignmentBytes.at(i));
+                    }
+                    model->addInfo(fileIndex, UString("\nAlignment bytes: ") + info);
+                }
+                
+                // Store alignment bytes for upholding parsing pre/post-conditions (aka "every byte is accounted for")
+                model->setAlignmentBytes(fileIndex, alignmentBytes);
+            }
         }
         
         // Adjust fileOffset
@@ -2591,33 +2592,34 @@ USTATUS FfsParser::parseSections(const UByteArray & sections, const UModelIndex 
         // Move to next section
         sectionOffset += sectionSize;
     
-        // Check for alignment bytes after the current section
-        // Sections must be aligned to 4 bytes boundary inside the FFS file
-        // The alignment byte should be equal to 0x00 regardless of erasePolarity
-        UINT32 numAlignmentBytes = ALIGN4(sectionOffset) - sectionOffset;
-        
-        // We might be at the very end of the file, need a check for it
-        if (fileBodySize < sectionOffset + sectionSize + numAlignmentBytes) {
-            numAlignmentBytes = fileBodySize - sectionOffset - sectionSize;
-        }
-        
-        if (numAlignmentBytes > 0) {
-            UByteArray alignmentBytes = sections.mid(sectionOffset + sectionSize, numAlignmentBytes);
-            // Check alignment bytes to be sane
-            if (!isUniformByte(alignmentBytes, 0x00)) {
-                msg(usprintf("%s: unexpected bytes found in alignment area, should all be 0x00", __FUNCTION__), sectionIndex);
-                
-                // Add unexpected alignment bytes to tree item info
-                UString info;
-                for (UINT8 i = 0; i < numAlignmentBytes; i++) {
-                    info += usprintf("%02X ", alignmentBytes[i]);
-                }
-                info = UString("Alignment bytes: ") + info + "\n";
-                model->addInfo(sectionIndex, info);
+        if (!probe) {
+            // Check for alignment bytes after the current section
+            // Sections must be aligned to 4 bytes boundary inside the FFS file
+            // The alignment byte should be equal to 0x00 regardless of erasePolarity
+            UINT32 numAlignmentBytes = ALIGN4(sectionOffset) - sectionOffset;
+            
+            // We might be at the very end of the file, need a check for it
+            if (fileBodySize < sectionOffset + numAlignmentBytes) {
+                numAlignmentBytes = fileBodySize - sectionOffset;
             }
             
-            // Store alignment bytes for upholding parsing pre/post-conditions (aka "every byte is accounted for")
-            model->setAlignmentBytes(sectionIndex, alignmentBytes);
+            if (numAlignmentBytes > 0) {
+                UByteArray alignmentBytes = sections.mid(sectionOffset, numAlignmentBytes);
+                // Check alignment bytes to be sane
+                if (!isUniformByte(alignmentBytes, 0x00)) {
+                    msg(usprintf("%s: unexpected bytes found in section alignment area, should all be 0x00", __FUNCTION__), sectionIndex);
+                    
+                    // Add unexpected alignment bytes to tree item info
+                    UString info;
+                    for (UINT8 i = 0; i < numAlignmentBytes; i++) {
+                        info += usprintf("%02X ", alignmentBytes[i]);
+                    }
+                    model->addInfo(sectionIndex, UString("\nAlignment bytes: ") + info);
+                }
+                
+                // Store alignment bytes for upholding parsing pre/post-conditions (aka "every byte is accounted for")
+                model->setAlignmentBytes(sectionIndex, alignmentBytes);
+            }
         }
         
         // Adjust sectionOffset
@@ -5486,10 +5488,10 @@ USTATUS FfsParser::parseCpdExtensionsArea(const UModelIndex & index, const UINT3
     
     UByteArray body = model->body(index);
     UINT32 offset = 0;
-    while (offset < (UINT32)body.size() - sizeof(CPD_EXTENTION_HEADER)) {
-        const CPD_EXTENTION_HEADER* extHeader = (const CPD_EXTENTION_HEADER*) (body.constData() + offset);
-        if (extHeader->Length > 0
-            && extHeader->Length <= ((UINT32)body.size() - offset)) {
+    UINT32 bodySize = (UINT32)body.size();
+    while (bodySize - offset >= sizeof(CPD_EXTENTION_HEADER)) {
+        const CPD_EXTENTION_HEADER* extHeader = (const CPD_EXTENTION_HEADER*)(body.constData() + offset);
+        if (extHeader->Length > 0 && bodySize - offset >= extHeader->Length) {
             UByteArray partition = body.mid(offset, extHeader->Length);
             
             UString name = cpdExtensionTypeToUstring(extHeader->Type);
@@ -5604,7 +5606,17 @@ USTATUS FfsParser::parseCpdExtensionsArea(const UModelIndex & index, const UINT3
             offset += extHeader->Length;
         }
         else break;
-        // TODO: add padding at the end
+    }
+    
+    // Check if we parsed everything, add the rest at the end as padding
+    if (offset < bodySize) {
+        UByteArray padding = body.mid(offset, bodySize - offset);
+        
+        // Get info
+        UString name = UString("Padding");
+        
+        // Add tree item
+        model->addItem(offset + localOffset, Types::Padding, getPaddingType(padding), name, UString(), UString(), UByteArray(), padding, UByteArray(), Fixed, index);
     }
     
     return U_SUCCESS;
@@ -5618,12 +5630,11 @@ USTATUS FfsParser::parseSignedPackageInfoData(const UModelIndex & index)
     
     UByteArray body = model->body(index);
     UINT32 offset = 0;
-    while (offset < (UINT32)body.size()) {
-        if (body.size() - offset < sizeof(CPD_EXT_SIGNED_PACKAGE_INFO_MODULE))
-            break;
+    UINT32 bodySize = (UINT32)body.size();
+    while (offset < bodySize && bodySize - offset >= sizeof(CPD_EXT_SIGNED_PACKAGE_INFO_MODULE)) {
         const CPD_EXT_SIGNED_PACKAGE_INFO_MODULE* moduleHeader = (const CPD_EXT_SIGNED_PACKAGE_INFO_MODULE*)(body.constData() + offset);
-        if ((sizeof(CPD_EXT_SIGNED_PACKAGE_INFO_MODULE) + moduleHeader->HashSize) <= ((UINT32)body.size() - offset)) {
-            UByteArray module((const char*)moduleHeader, CpdExtSignedPkgMetadataHashOffset + moduleHeader->HashSize);
+        if (bodySize - offset >= sizeof(CPD_EXT_SIGNED_PACKAGE_INFO_MODULE) + moduleHeader->HashSize) {
+            UByteArray mdl((const char*)moduleHeader, CpdExtSignedPkgMetadataHashOffset + moduleHeader->HashSize);
             UString name = usprintf("%.12s", moduleHeader->Name);
             
             // This hash is stored reversed
@@ -5636,12 +5647,22 @@ USTATUS FfsParser::parseSignedPackageInfoData(const UModelIndex & index)
                                     moduleHeader->HashAlgorithm,
                                     moduleHeader->HashSize, moduleHeader->HashSize,
                                     moduleHeader->MetadataSize, moduleHeader->MetadataSize) + UString(hash.toHex().constData());
-            // Add tree otem
-            model->addItem(offset, Types::CpdSpiEntry, 0, name, UString(), info, UByteArray(), module, UByteArray(), Fixed, index);
-            offset += module.size();
+            // Add tree item
+            model->addItem(offset, Types::CpdSpiEntry, 0, name, UString(), info, UByteArray(), mdl, UByteArray(), Fixed, index);
+            offset += mdl.size();
         }
         else break;
-        // TODO: add padding at the end
+    }
+    
+    // Check if we parsed everything, add the rest at the end as padding
+    if (offset < bodySize) {
+        UByteArray padding = body.mid(offset, bodySize - offset);
+        
+        // Get info
+        UString name = UString("Padding");
+        
+        // Add tree item
+        model->addItem(offset, Types::Padding, getPaddingType(padding), name, UString(), UString(), UByteArray(), padding, UByteArray(), Fixed, index);
     }
     
     return U_SUCCESS;
