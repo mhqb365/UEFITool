@@ -1,5 +1,5 @@
 /* Precomp.h -- precompilation file
-2024-01-25 : Igor Pavlov : Public domain */
+: Igor Pavlov : Public domain */
 
 #ifndef ZIP7_INC_PRECOMP_H
 #define ZIP7_INC_PRECOMP_H
@@ -23,9 +23,6 @@
 
 #include "Compiler.h"
 
-// UEFITool: use single-threaded LzFind
-#define Z7_ST
-
 #ifdef _MSC_VER
 // #pragma warning(disable : 4206) // nonstandard extension used : translation unit is empty
 #if _MSC_VER >= 1912
@@ -43,17 +40,17 @@
 #endif
 */
 
+#ifndef Z7_LARGE_PAGES
+#if !defined(Z7_NO_LARGE_PAGES) && !defined(UNDER_CE)
+#define Z7_LARGE_PAGES 1
+#endif
+#endif
+
 #ifdef _WIN32
 /*
   this "Precomp.h" file must be included before <windows.h>,
   if we want to define _WIN32_WINNT before <windows.h>.
 */
-
-#ifndef Z7_LARGE_PAGES
-#ifndef Z7_NO_LARGE_PAGES
-#define Z7_LARGE_PAGES 1
-#endif
-#endif
 
 #ifndef Z7_LONG_PATH
 #ifndef Z7_NO_LONG_PATH
