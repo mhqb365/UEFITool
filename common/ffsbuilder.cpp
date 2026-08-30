@@ -15,10 +15,34 @@
 #include "descriptor.h"
 #include "ffs.h"
 #include "peimage.h"
+#include "parsingdata.h"
 #include "utility.h"
 #include "nvram.h"
 
 #include <cstring>
+
+static UINT8 volumeEmptyByte(const TreeModel* model, const UModelIndex& index)
+{
+    if (index.isValid() && !model->hasEmptyParsingData(index)) {
+        const VOLUME_PARSING_DATA* pdata = (const VOLUME_PARSING_DATA*)model->parsingData(index).constData();
+        return pdata->emptyByte;
+    }
+    return 0xFF;
+}
+
+static UINT8 volumeFfsVersion(const TreeModel* model, const UModelIndex& index)
+{
+    if (index.isValid() && !model->hasEmptyParsingData(index)) {
+        const VOLUME_PARSING_DATA* pdata = (const VOLUME_PARSING_DATA*)model->parsingData(index).constData();
+        return pdata->ffsVersion;
+    }
+    return 2;
+}
+
+static UByteArray paddingBytes(UINT32 size, UINT8 value)
+{
+    return size ? UByteArray(size, value) : UByteArray();
+}
 
 USTATUS FfsBuilder::erase(const UModelIndex & index, UByteArray & erased)
 {
@@ -381,34 +405,218 @@ USTATUS FfsBuilder::buildFreeSpace(const UModelIndex & index, UByteArray & freeS
 
 USTATUS FfsBuilder::buildVolume(const UModelIndex & index, UByteArray & volume)
 {
-    U_UNUSED_PARAMETER(index);
-    U_UNUSED_PARAMETER(volume);
+    if (!index.isValid())
+        return U_INVALID_PARAMETER;
     
-    return U_NOT_IMPLEMENTED;
+    if (model->action(index) == Actions::NoAction) {
+        volume = model->full(index);
+        return U_SUCCESS;
+    }
+    else if (model->action(index) == Actions::Remove) {
+        volume.clear();
+        return U_SUCCESS;
+    }
+
+    UINT8 emptyByte = volumeEmptyByte(model, index);
+    UByteArray body;
+    for (int i = 0; i < model->rowCount(index); i++) {
+        UModelIndex current = index.model()->index(i, 0, index);
+        UByteArray currentData;
+        USTATUS result = U_SUCCESS;
+
+        switch (model->type(current)) {
+            case Types::File:
+                result = buildFile(current, currentData);
+                break;
+            case Types::Padding:
+                result = buildPadding(current, currentData);
+                break;
+            case Types::FreeSpace:
+                result = buildFreeSpace(current, currentData);
+                break;
+            default:
+                msg(UString("buildVolume: unexpected item type ") + itemTypeToUString(model->type(current)), current);
+                return U_UNKNOWN_ITEM_TYPE;
+        }
+
+        if (result) {
+            msg(UString("buildVolume: building of ") + model->name(current) + UString(" failed with error ") + errorCodeToUString(result), current);
+            return result;
+        }
+
+        body += currentData;
+        if (i + 1 < model->rowCount(index))
+            body += paddingBytes(ALIGN8((UINT32)body.size()) - (UINT32)body.size(), emptyByte);
+    }
+
+    UINT32 oldBodySize = model->bodySize(index);
+    if ((UINT32)body.size() > oldBodySize) {
+        msg(usprintf("buildVolume: new body size %Xh (%u) is bigger than the original %Xh (%u)", body.size(), body.size(), oldBodySize, oldBodySize), index);
+        return U_INVALID_VOLUME;
+    }
+    body += paddingBytes(oldBodySize - (UINT32)body.size(), emptyByte);
+
+    UByteArray header = model->header(index);
+    if ((UINT32)header.size() >= sizeof(EFI_FIRMWARE_VOLUME_HEADER)) {
+        EFI_FIRMWARE_VOLUME_HEADER* volumeHeader = (EFI_FIRMWARE_VOLUME_HEADER*)header.data();
+        volumeHeader->FvLength = header.size() + body.size();
+        volumeHeader->Checksum = 0;
+        volumeHeader->Checksum = calculateChecksum16((const UINT16*)header.constData(), volumeHeader->HeaderLength);
+    }
+
+    volume = header + body + model->tail(index);
+    return U_SUCCESS;
 }
 
 USTATUS FfsBuilder::buildPadFile(const UModelIndex & index, UByteArray & padFile)
 {
-    U_UNUSED_PARAMETER(index);
-    U_UNUSED_PARAMETER(padFile);
-    
-    return U_NOT_IMPLEMENTED;
+    return buildFile(index, padFile);
 }
 
 USTATUS FfsBuilder::buildFile(const UModelIndex & index, UByteArray & file)
 {
-    U_UNUSED_PARAMETER(index);
-    U_UNUSED_PARAMETER(file);
-    
-    return U_NOT_IMPLEMENTED;
+    if (!index.isValid())
+        return U_INVALID_PARAMETER;
+
+    if (model->action(index) == Actions::NoAction) {
+        file = model->full(index) + model->alignmentBytes(index);
+        return U_SUCCESS;
+    }
+    else if (model->action(index) == Actions::Remove) {
+        file.clear();
+        return U_SUCCESS;
+    }
+
+    UByteArray body;
+    if (model->rowCount(index)) {
+        for (int i = 0; i < model->rowCount(index); i++) {
+            UModelIndex current = index.model()->index(i, 0, index);
+            UByteArray currentData;
+            USTATUS result = U_SUCCESS;
+
+            if (model->type(current) == Types::Section)
+                result = buildSection(current, currentData);
+            else if (model->type(current) == Types::Padding)
+                result = buildPadding(current, currentData);
+            else {
+                msg(UString("buildFile: unexpected item type ") + itemTypeToUString(model->type(current)), current);
+                return U_UNKNOWN_ITEM_TYPE;
+            }
+
+            if (result) {
+                msg(UString("buildFile: building of ") + model->name(current) + UString(" failed with error ") + errorCodeToUString(result), current);
+                return result;
+            }
+
+            body += currentData;
+            if (i + 1 < model->rowCount(index))
+                body += paddingBytes(ALIGN4((UINT32)body.size()) - (UINT32)body.size(), 0x00);
+        }
+    }
+    else {
+        body = model->body(index);
+    }
+
+    UByteArray header = model->header(index);
+    if ((UINT32)header.size() < sizeof(EFI_FFS_FILE_HEADER))
+        return U_INVALID_FILE;
+
+    EFI_FFS_FILE_HEADER* fileHeader = (EFI_FFS_FILE_HEADER*)header.data();
+    UINT32 fullSize = (UINT32)(header.size() + body.size() + model->tailSize(index));
+    if ((UINT32)header.size() == sizeof(EFI_FFS_FILE_HEADER2)) {
+        uint32ToUint24(EFI_SECTION2_IS_USED, fileHeader->Size);
+        ((EFI_FFS_FILE_HEADER2*)header.data())->ExtendedSize = fullSize;
+    }
+    else if (fullSize <= 0xFFFFFF) {
+        uint32ToUint24(fullSize, fileHeader->Size);
+    }
+    else {
+        msg(UString("buildFile: large files require FFSv3 extended header"), index);
+        return U_INVALID_FILE;
+    }
+
+    fileHeader->IntegrityCheck.Checksum.Header = 0;
+    fileHeader->IntegrityCheck.Checksum.File = 0;
+    UINT8 state = fileHeader->State;
+    fileHeader->State = 0;
+    fileHeader->IntegrityCheck.Checksum.Header = calculateChecksum8((const UINT8*)header.constData(), (UINT32)header.size());
+    fileHeader->State = state;
+    if (fileHeader->Attributes & FFS_ATTRIB_CHECKSUM)
+        fileHeader->IntegrityCheck.Checksum.File = body.isEmpty() ? 0 : calculateChecksum8((const UINT8*)body.constData(), (UINT32)body.size());
+    else
+        fileHeader->IntegrityCheck.Checksum.File = FFS_FIXED_CHECKSUM2;
+
+    file = header + body + model->tail(index);
+    file += paddingBytes(ALIGN8((UINT32)file.size()) - (UINT32)file.size(), model->hasEmptyParsingData(index) ? 0xFF : ((const FILE_PARSING_DATA*)model->parsingData(index).constData())->emptyByte);
+    return U_SUCCESS;
 }
 
 USTATUS FfsBuilder::buildSection(const UModelIndex & index, UByteArray & section)
 {
-    U_UNUSED_PARAMETER(index);
-    U_UNUSED_PARAMETER(section);
-    
-    return U_NOT_IMPLEMENTED;
+    if (!index.isValid())
+        return U_INVALID_PARAMETER;
+
+    if (model->action(index) == Actions::NoAction) {
+        section = model->full(index) + model->alignmentBytes(index);
+        return U_SUCCESS;
+    }
+    else if (model->action(index) == Actions::Remove) {
+        section.clear();
+        return U_SUCCESS;
+    }
+
+    UByteArray body;
+    if (model->rowCount(index)) {
+        for (int i = 0; i < model->rowCount(index); i++) {
+            UModelIndex current = index.model()->index(i, 0, index);
+            UByteArray currentData;
+            USTATUS result = U_SUCCESS;
+            if (model->type(current) == Types::Section)
+                result = buildSection(current, currentData);
+            else if (model->type(current) == Types::Padding)
+                result = buildPadding(current, currentData);
+            else if (model->type(current) == Types::Volume)
+                result = buildVolume(current, currentData);
+            else {
+                msg(UString("buildSection: unexpected item type ") + itemTypeToUString(model->type(current)), current);
+                return U_UNKNOWN_ITEM_TYPE;
+            }
+
+            if (result) {
+                msg(UString("buildSection: building of ") + model->name(current) + UString(" failed with error ") + errorCodeToUString(result), current);
+                return result;
+            }
+
+            body += currentData;
+            if (i + 1 < model->rowCount(index))
+                body += paddingBytes(ALIGN4((UINT32)body.size()) - (UINT32)body.size(), 0x00);
+        }
+    }
+    else {
+        body = model->body(index);
+    }
+
+    UByteArray header = model->header(index);
+    if ((UINT32)header.size() < sizeof(EFI_COMMON_SECTION_HEADER))
+        return U_INVALID_SECTION;
+
+    EFI_COMMON_SECTION_HEADER* sectionHeader = (EFI_COMMON_SECTION_HEADER*)header.data();
+    UINT32 fullSize = (UINT32)(header.size() + body.size());
+    if ((UINT32)header.size() == sizeof(EFI_COMMON_SECTION_HEADER2)) {
+        uint32ToUint24(EFI_SECTION2_IS_USED, sectionHeader->Size);
+        ((EFI_COMMON_SECTION_HEADER2*)header.data())->ExtendedSize = fullSize;
+    }
+    else if (fullSize <= 0xFFFFFF) {
+        uint32ToUint24(fullSize, sectionHeader->Size);
+    }
+    else {
+        msg(UString("buildSection: large sections require FFSv3 extended header"), index);
+        return U_INVALID_SECTION;
+    }
+
+    section = header + body;
+    section += paddingBytes(ALIGN4((UINT32)section.size()) - (UINT32)section.size(), 0x00);
+    return U_SUCCESS;
 }
 
 

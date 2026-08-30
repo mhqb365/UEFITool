@@ -732,24 +732,31 @@ void UEFITool::replace(const UINT8 mode)
         expectedSize = model->bodySize(index);
     }
 
-    if ((UINT32)data.size() != expectedSize) {
-        QMessageBox::critical(this, tr("Replacement failed"),
-            tr("Replacement size must be exactly %1 bytes for offset-only patching. Selected file is %2 bytes.")
-                .arg(expectedSize).arg(data.size()), QMessageBox::Ok);
-        return;
-    }
-
-    if ((quint64)patchOffset + (quint64)data.size() > (quint64)openedImage.size()) {
+    if ((quint64)patchOffset + (quint64)expectedSize > (quint64)openedImage.size()) {
         QMessageBox::critical(this, tr("Replacement failed"), tr("Replacement range is outside the opened image"), QMessageBox::Ok);
         return;
     }
 
-    replacementPatches.append(qMakePair((quint32)patchOffset, data));
-    model->setAction(index, Actions::Replace);
-    populateUi(index);
+    QByteArray backup = openedImage;
+    openedImage.replace(patchOffset, expectedSize, data);
+    replacementPatches.clear();
+
+    if (!reloadOpenedImage(patchOffset)) {
+        openedImage = backup;
+        reloadOpenedImage(patchOffset);
+        QMessageBox::critical(this, tr("Replacement failed"), tr("Patched image can not be parsed"), QMessageBox::Ok);
+        return;
+    }
+
+    QModelIndex patchedIndex = model->findByBase(patchOffset);
+    if (patchedIndex.isValid()) {
+        ui->structureTreeView->selectionModel()->select(patchedIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows | QItemSelectionModel::Clear);
+        ui->structureTreeView->setCurrentIndex(patchedIndex);
+        populateUi(patchedIndex);
+    }
     currentDir = QFileInfo(path).absolutePath();
     ui->actionSaveImageFile->setEnabled(true);
-    ui->statusBar->showMessage(tr("Replacement queued at offset %1").arg(patchOffset, 0, 16).toUpper());
+    ui->statusBar->showMessage(tr("Replacement applied at offset %1").arg(patchOffset, 0, 16).toUpper());
 }
 
 void UEFITool::extractAsIs()
@@ -884,6 +891,7 @@ void UEFITool::about()
                           "The program is dedicated to <b>RevoGirl</b>. Rest in peace, young genius.<br><br>"
                           "The program and the accompanying materials are licensed and made available under the terms and conditions of the BSD-2-Clause License.<br>"
                           "The full text of the license may be found at <a href=https://opensource.org/licenses/BSD-2-Clause>OpenSource.org</a>.<br><br>"
+                          "This version was modified by mhqb365. Visit <a href=\"https://mhqb365.com\">mhqb365.com</a> to learn more about him.<br><br>"
                           "<b>THE PROGRAM IS DISTRIBUTED UNDER THE BSD LICENSE ON AN \"AS IS\" BASIS, "
                           "WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, "
                           "EITHER EXPRESS OR IMPLIED.</b>"
@@ -908,13 +916,7 @@ void UEFITool::saveImageFile()
         return;
 
     QByteArray image;
-    if (!replacementPatches.isEmpty()) {
-        image = openedImage;
-        for (const auto &patch : replacementPatches) {
-            image.replace(patch.first, patch.second.size(), patch.second);
-        }
-    }
-    else {
+    if (hasTreeActions(root)) {
         if (!ffsBuilder)
             ffsBuilder = new FfsBuilder(model);
         else
@@ -926,6 +928,27 @@ void UEFITool::saveImageFile()
             QMessageBox::critical(this, tr("Image building failed"), errorCodeToUString(result), QMessageBox::Ok);
             return;
         }
+
+        TreeModel checkModel;
+        FfsParser checkParser(&checkModel);
+        result = checkParser.parse(image);
+        if (result) {
+            QMessageBox::critical(this, tr("Image building failed"), tr("Built image can not be parsed"), QMessageBox::Ok);
+            return;
+        }
+    }
+    else if (!replacementPatches.isEmpty()) {
+        image = openedImage;
+        QList<ReplacementPatch> patches = replacementPatches;
+        std::sort(patches.begin(), patches.end(), [](const ReplacementPatch &left, const ReplacementPatch &right) {
+            return left.offset > right.offset;
+        });
+        for (const auto &patch : patches) {
+            image.replace(patch.offset, patch.originalSize, patch.data);
+        }
+    }
+    else {
+        image = openedImage;
     }
 
     QString path = QFileDialog::getSaveFileName(this, tr("Save image file"), currentPath, tr("Image files (*.rom *.bin);;All files (*)"));
@@ -1109,6 +1132,48 @@ void UEFITool::openRecentImageFile()
             openImageFile(fileName);
         }
     }
+}
+
+bool UEFITool::reloadOpenedImage(const UINT32 preferredBase)
+{
+    QString title = windowTitle();
+    init();
+    setWindowTitle(title);
+
+    USTATUS result = ffsParser->parse(openedImage);
+    showParserMessages();
+    if (result)
+        return false;
+
+    ffsParser->outputInfo();
+    enableDock(ui->structureTreeDock, true);
+    showFitTable();
+    showSecurityInfo();
+
+    delete ffsFinder;
+    ffsFinder = new FfsFinder(model);
+    ui->actionSearch->setEnabled(true);
+
+    delete ffsOps;
+    ffsOps = new FfsOperations(model);
+
+    delete ffsReport;
+    ffsReport = new FfsReport(model);
+
+    ui->actionGoToBase->setEnabled(true);
+    if (ffsParser->getAddressDiff() <= 0xFFFFFFFFUL)
+        ui->actionGoToAddress->setEnabled(true);
+    ui->actionGenerateReport->setEnabled(true);
+    ui->actionExportDiscoveredGuids->setEnabled(true);
+
+    QModelIndex index = preferredBase ? model->findByBase(preferredBase) : QModelIndex();
+    if (!index.isValid())
+        index = model->index(0, 0, QModelIndex());
+    ui->structureTreeView->selectionModel()->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows | QItemSelectionModel::Clear);
+    ui->structureTreeView->setCurrentIndex(index);
+    populateUi(index);
+
+    return true;
 }
 
 void UEFITool::openImageFile(QString path)
@@ -1961,16 +2026,43 @@ QByteArray UEFITool::patchedData(const QModelIndex &index, const UINT8 mode) con
 
     UINT64 dataStart = base;
     UINT64 dataEnd = dataStart + (UINT64)data.size();
-    for (const auto &patch : replacementPatches) {
-        UINT64 patchStart = patch.first;
-        UINT64 patchEnd = patchStart + (UINT64)patch.second.size();
-        UINT64 start = std::max(dataStart, patchStart);
-        UINT64 end = std::min(dataEnd, patchEnd);
-        if (start < end) {
-            data.replace((int)(start - dataStart), (int)(end - start),
-                patch.second.mid((int)(start - patchStart), (int)(end - start)));
+    QList<ReplacementPatch> patches = replacementPatches;
+    std::sort(patches.begin(), patches.end(), [](const ReplacementPatch &left, const ReplacementPatch &right) {
+        return left.offset > right.offset;
+    });
+
+    for (const auto &patch : patches) {
+        UINT64 patchStart = patch.offset;
+        UINT64 patchEnd = patchStart + (UINT64)patch.originalSize;
+        if (dataStart <= patchStart && patchEnd <= dataEnd) {
+            data.replace((int)(patchStart - dataStart), (int)patch.originalSize, patch.data);
+            dataEnd = dataStart + (UINT64)data.size();
+        }
+        else {
+            UINT64 start = std::max(dataStart, patchStart);
+            UINT64 end = std::min(dataEnd, patchEnd);
+            if (start < end) {
+                data.replace((int)(start - dataStart), (int)(end - start),
+                    patch.data.mid((int)(start - patchStart), (int)(end - start)));
+            }
         }
     }
 
     return data;
+}
+
+bool UEFITool::hasTreeActions(const QModelIndex &index) const
+{
+    if (!index.isValid())
+        return false;
+
+    if (model->action(index) != Actions::NoAction)
+        return true;
+
+    for (int i = 0; i < model->rowCount(index); i++) {
+        if (hasTreeActions(index.model()->index(i, 0, index)))
+            return true;
+    }
+
+    return false;
 }

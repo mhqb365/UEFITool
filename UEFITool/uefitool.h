@@ -168,6 +168,12 @@ private slots:
 #endif
     
 private:
+    struct ReplacementPatch {
+        quint32 offset;
+        quint32 originalSize;
+        QByteArray data;
+    };
+
     Ui::UEFITool* ui;
     TreeModel* model;
     FfsParser* ffsParser;
@@ -192,7 +198,7 @@ private:
     QString openGuidDatabaseDir;
     QString extractDir;
     QByteArray openedImage;
-    QList<QPair<quint32, QByteArray> > replacementPatches;
+    QList<ReplacementPatch> replacementPatches;
     QFont currentFont;
     const QString version;
     bool markingEnabled;
@@ -219,6 +225,8 @@ private:
     void doSm3(QByteArray data);
 
     QByteArray patchedData(const QModelIndex &index, const UINT8 mode) const;
+    bool reloadOpenedImage(const UINT32 preferredBase = 0);
+    bool hasTreeActions(const QModelIndex &index) const;
 };
 
 #endif // UEFITOOL_H
