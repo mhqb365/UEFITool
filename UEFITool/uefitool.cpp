@@ -25,6 +25,8 @@
 #endif
 #include <QProxyStyle>
 
+#include <algorithm>
+
 class DockProxyStyle : public QProxyStyle {
 public:
     using QProxyStyle::QProxyStyle;
@@ -353,7 +355,7 @@ void UEFITool::populateUi(const QModelIndex &current)
     selectedHexView.clearMetadata();
     selectedHexView.setBackground(0, model->headerSize(current),
                                   model->markingDarkMode() ? Qt::darkGreen : Qt::green);
-    selectedHexView.setData(model->full(current));
+    selectedHexView.setData(patchedData(current, EXTRACT_MODE_AS_IS));
     enableDock(ui->hexViewDock, true);
     
     // Enable menus
@@ -435,21 +437,17 @@ void UEFITool::populateUi(const QModelIndex &current)
     ui->actionUncompressedHashSha512->setDisabled(model->hasEmptyUncompressedData(current));
     ui->actionUncompressedHashSm3->setDisabled(model->hasEmptyUncompressedData(current));
     
-    // Disable rebuild for now
-    //ui->actionRebuild->setDisabled(type == Types::Region && subtype == Subtypes::DescriptorRegion);
-    //ui->actionReplace->setDisabled(type == Types::Region && subtype == Subtypes::DescriptorRegion);
-    
-    //ui->actionRebuild->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
+    ui->actionRebuild->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
     ui->actionExtractBody->setDisabled(model->hasEmptyBody(current));
     ui->actionExtractUncompressed->setDisabled(model->hasEmptyUncompressedData(current));
-    //ui->actionRemove->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
-    //ui->actionInsertInto->setEnabled((type == Types::Volume && subtype != Subtypes::UnknownVolume) ||
-    //    (type == Types::File && subtype != EFI_FV_FILETYPE_ALL && subtype != EFI_FV_FILETYPE_RAW && subtype != EFI_FV_FILETYPE_PAD) ||
-    //    (type == Types::Section && (subtype == EFI_SECTION_COMPRESSION || subtype == EFI_SECTION_GUID_DEFINED || subtype == EFI_SECTION_DISPOSABLE)));
-    //ui->actionInsertBefore->setEnabled(type == Types::File || type == Types::Section);
-    //ui->actionInsertAfter->setEnabled(type == Types::File || type == Types::Section);
-    //ui->actionReplace->setEnabled((type == Types::Region && subtype != Subtypes::DescriptorRegion) || type == Types::Volume || type == Types::File || type == Types::Section);
-    //ui->actionReplaceBody->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
+    ui->actionRemove->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
+    ui->actionInsertInto->setEnabled((type == Types::Volume && subtype != Subtypes::UnknownVolume) ||
+        (type == Types::File && subtype != EFI_FV_FILETYPE_ALL && subtype != EFI_FV_FILETYPE_RAW && subtype != EFI_FV_FILETYPE_PAD) ||
+        (type == Types::Section && (subtype == EFI_SECTION_COMPRESSION || subtype == EFI_SECTION_GUID_DEFINED || subtype == EFI_SECTION_DISPOSABLE)));
+    ui->actionInsertBefore->setEnabled(type == Types::File || type == Types::Section);
+    ui->actionInsertAfter->setEnabled(type == Types::File || type == Types::Section);
+    ui->actionReplace->setEnabled((type == Types::Region && subtype != Subtypes::DescriptorRegion) || type == Types::Volume || type == Types::File || type == Types::Section);
+    ui->actionReplaceBody->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
     
     ui->menuMessageActions->setEnabled(false);
 }
@@ -680,6 +678,7 @@ void UEFITool::goToData()
 void UEFITool::insert(const UINT8 mode)
 {
     U_UNUSED_PARAMETER(mode);
+    QMessageBox::information(this, tr("Insertion failed"), errorCodeToUString(U_NOT_IMPLEMENTED), QMessageBox::Ok);
 }
 
 void UEFITool::insertInto()
@@ -709,7 +708,48 @@ void UEFITool::replaceBody()
 
 void UEFITool::replace(const UINT8 mode)
 {
-    U_UNUSED_PARAMETER(mode);
+    QModelIndex index = ui->structureTreeView->selectionModel()->currentIndex();
+    if (!index.isValid())
+        return;
+
+    QString path = QFileDialog::getOpenFileName(this, tr("Select replacement file"), currentDir, tr("All files (*)"));
+    if (path.trimmed().isEmpty())
+        return;
+
+    QFile inputFile(path);
+    if (!inputFile.open(QFile::ReadOnly)) {
+        QMessageBox::critical(this, tr("Replacement failed"), tr("Can't open input file for reading"), QMessageBox::Ok);
+        return;
+    }
+
+    QByteArray data = inputFile.readAll();
+    inputFile.close();
+
+    UINT32 patchOffset = model->base(index);
+    UINT32 expectedSize = model->fullSize(index);
+    if (mode == REPLACE_MODE_BODY) {
+        patchOffset += model->headerSize(index);
+        expectedSize = model->bodySize(index);
+    }
+
+    if ((UINT32)data.size() != expectedSize) {
+        QMessageBox::critical(this, tr("Replacement failed"),
+            tr("Replacement size must be exactly %1 bytes for offset-only patching. Selected file is %2 bytes.")
+                .arg(expectedSize).arg(data.size()), QMessageBox::Ok);
+        return;
+    }
+
+    if ((quint64)patchOffset + (quint64)data.size() > (quint64)openedImage.size()) {
+        QMessageBox::critical(this, tr("Replacement failed"), tr("Replacement range is outside the opened image"), QMessageBox::Ok);
+        return;
+    }
+
+    replacementPatches.append(qMakePair((quint32)patchOffset, data));
+    model->setAction(index, Actions::Replace);
+    populateUi(index);
+    currentDir = QFileInfo(path).absolutePath();
+    ui->actionSaveImageFile->setEnabled(true);
+    ui->statusBar->showMessage(tr("Replacement queued at offset %1").arg(patchOffset, 0, 16).toUpper());
 }
 
 void UEFITool::extractAsIs()
@@ -797,12 +837,34 @@ void UEFITool::extract(const UINT8 mode)
 
 void UEFITool::rebuild()
 {
-    
+    QModelIndex index = ui->structureTreeView->selectionModel()->currentIndex();
+    if (!index.isValid())
+        return;
+
+    USTATUS result = ffsOps->rebuild(index);
+    showBuilderMessages();
+    if (result) {
+        QMessageBox::critical(this, tr("Rebuild failed"), errorCodeToUString(result), QMessageBox::Ok);
+        return;
+    }
+
+    ui->actionSaveImageFile->setEnabled(true);
 }
 
 void UEFITool::remove()
 {
-    
+    QModelIndex index = ui->structureTreeView->selectionModel()->currentIndex();
+    if (!index.isValid())
+        return;
+
+    USTATUS result = ffsOps->remove(index);
+    showBuilderMessages();
+    if (result) {
+        QMessageBox::critical(this, tr("Remove failed"), errorCodeToUString(result), QMessageBox::Ok);
+        return;
+    }
+
+    ui->actionSaveImageFile->setEnabled(true);
 }
 
 void UEFITool::about()
@@ -841,7 +903,49 @@ void UEFITool::exit()
 
 void UEFITool::saveImageFile()
 {
-    
+    QModelIndex root = model ? model->index(0, 0, QModelIndex()) : QModelIndex();
+    if (!root.isValid())
+        return;
+
+    QByteArray image;
+    if (!replacementPatches.isEmpty()) {
+        image = openedImage;
+        for (const auto &patch : replacementPatches) {
+            image.replace(patch.first, patch.second.size(), patch.second);
+        }
+    }
+    else {
+        if (!ffsBuilder)
+            ffsBuilder = new FfsBuilder(model);
+        else
+            ffsBuilder->clearMessages();
+
+        USTATUS result = ffsBuilder->build(root, image);
+        showBuilderMessages();
+        if (result) {
+            QMessageBox::critical(this, tr("Image building failed"), errorCodeToUString(result), QMessageBox::Ok);
+            return;
+        }
+    }
+
+    QString path = QFileDialog::getSaveFileName(this, tr("Save image file"), currentPath, tr("Image files (*.rom *.bin);;All files (*)"));
+    if (path.trimmed().isEmpty())
+        return;
+
+    QFile outputFile(path);
+    if (!outputFile.open(QFile::WriteOnly)) {
+        QMessageBox::critical(this, tr("Image saving failed"), tr("Can't open output file for rewriting"), QMessageBox::Ok);
+        return;
+    }
+    outputFile.resize(0);
+    outputFile.write(image);
+    outputFile.close();
+
+    currentPath = path;
+    currentDir = QFileInfo(path).absolutePath();
+    openedImage = image;
+    replacementPatches.clear();
+    ui->statusBar->showMessage(tr("Saved: %1").arg(QFileInfo(path).fileName()));
 }
 
 void UEFITool::onDockStateChange(const bool topLevel)
@@ -1031,6 +1135,8 @@ void UEFITool::openImageFile(QString path)
     inputFile.close();
     
     init();
+    openedImage = buffer;
+    replacementPatches.clear();
     setWindowTitle(tr("UEFITool %1 - %2").arg(version).arg(fileInfo.fileName()));
     
     // Parse the image
@@ -1309,6 +1415,9 @@ void UEFITool::contextMenuEvent(QContextMenuEvent* event)
     if (!index.isValid()) {
         return;
     }
+
+    ui->structureTreeView->selectionModel()->select(index, QItemSelectionModel::Select | QItemSelectionModel::Rows | QItemSelectionModel::Clear);
+    ui->structureTreeView->setCurrentIndex(index);
     
     QMenu* menu = nullptr;
     switch (model->type(index)) {
@@ -1830,4 +1939,38 @@ void UEFITool::doSm3(QByteArray data)
     clipboard->clear();
     clipboard->setText(value);
     QMessageBox::information(this, tr("SM3"), value, QMessageBox::Ok);
+}
+
+QByteArray UEFITool::patchedData(const QModelIndex &index, const UINT8 mode) const
+{
+    if (!index.isValid())
+        return QByteArray();
+
+    UINT32 base = model->base(index);
+    QByteArray data;
+    if (mode == EXTRACT_MODE_BODY) {
+        base += model->headerSize(index);
+        data = model->body(index);
+    }
+    else if (mode == EXTRACT_MODE_UNCOMPRESSED) {
+        return model->uncompressedData(index);
+    }
+    else {
+        data = model->full(index);
+    }
+
+    UINT64 dataStart = base;
+    UINT64 dataEnd = dataStart + (UINT64)data.size();
+    for (const auto &patch : replacementPatches) {
+        UINT64 patchStart = patch.first;
+        UINT64 patchEnd = patchStart + (UINT64)patch.second.size();
+        UINT64 start = std::max(dataStart, patchStart);
+        UINT64 end = std::min(dataEnd, patchEnd);
+        if (start < end) {
+            data.replace((int)(start - dataStart), (int)(end - start),
+                patch.second.mid((int)(start - patchStart), (int)(end - start)));
+        }
+    }
+
+    return data;
 }

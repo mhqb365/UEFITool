@@ -191,6 +191,8 @@ private:
     QString openImageDir;
     QString openGuidDatabaseDir;
     QString extractDir;
+    QByteArray openedImage;
+    QList<QPair<quint32, QByteArray> > replacementPatches;
     QFont currentFont;
     const QString version;
     bool markingEnabled;
@@ -215,6 +217,8 @@ private:
     void doSha384(QByteArray data);
     void doSha512(QByteArray data);
     void doSm3(QByteArray data);
+
+    QByteArray patchedData(const QModelIndex &index, const UINT8 mode) const;
 };
 
 #endif // UEFITOOL_H
