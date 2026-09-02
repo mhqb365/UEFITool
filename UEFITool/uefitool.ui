@@ -356,6 +356,13 @@
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
      <addaction name="actionExtractBody"/>
+     <addaction name="separator"/>
+     <addaction name="actionRebuild"/>
+     <addaction name="separator"/>
+     <addaction name="actionReplace"/>
+     <addaction name="actionReplaceBody"/>
+     <addaction name="separator"/>
+     <addaction name="actionRemove"/>
     </widget>
     <widget class="QMenu" name="menuImageActions">
      <property name="title">
@@ -366,6 +373,12 @@
      <addaction name="menuHashActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
+     <addaction name="separator"/>
+     <addaction name="actionRebuild"/>
+     <addaction name="separator"/>
+     <addaction name="actionReplace"/>
+     <addaction name="separator"/>
+     <addaction name="actionRemove"/>
     </widget>
     <widget class="QMenu" name="menuRegionActions">
      <property name="title">
@@ -380,6 +393,9 @@
      <addaction name="actionRebuild"/>
      <addaction name="separator"/>
      <addaction name="actionReplace"/>
+     <addaction name="actionReplaceBody"/>
+     <addaction name="separator"/>
+     <addaction name="actionRemove"/>
     </widget>
     <widget class="QMenu" name="menuPaddingActions">
      <property name="title">
@@ -390,6 +406,13 @@
      <addaction name="menuHashActions"/>
      <addaction name="separator"/>
      <addaction name="actionExtract"/>
+     <addaction name="separator"/>
+     <addaction name="actionRebuild"/>
+     <addaction name="separator"/>
+     <addaction name="actionReplace"/>
+     <addaction name="actionReplaceBody"/>
+     <addaction name="separator"/>
+     <addaction name="actionRemove"/>
     </widget>
     <widget class="QMenu" name="menuVolumeActions">
      <property name="title">
@@ -412,6 +435,8 @@
      <addaction name="separator"/>
      <addaction name="actionReplace"/>
      <addaction name="actionReplaceBody"/>
+     <addaction name="separator"/>
+     <addaction name="actionRemove"/>
     </widget>
     <widget class="QMenu" name="menuFileActions">
      <property name="title">
@@ -528,6 +553,8 @@
      <addaction name="separator"/>
      <addaction name="actionReplace"/>
      <addaction name="actionReplaceBody"/>
+     <addaction name="separator"/>
+     <addaction name="actionRemove"/>
     </widget>
     <addaction name="actionGoToBase"/>
     <addaction name="actionGoToAddress"/>

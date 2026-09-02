@@ -14,6 +14,6 @@ WITHOUT WARRANTIES OR REPRESENTATIONS OF ANY KIND, EITHER EXPRESS OR IMPLIED.
 #ifndef VERSION_H
 #define VERSION_H
 
-#define PROGRAM_VERSION "NE alpha 75 Forked" " (" __DATE__ ")"
+#define PROGRAM_VERSION "NE alpha 75 Forked 2" " (" __DATE__ ")"
 
 #endif // VERSION_H

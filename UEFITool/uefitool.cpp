@@ -437,17 +437,18 @@ void UEFITool::populateUi(const QModelIndex &current)
     ui->actionUncompressedHashSha512->setDisabled(model->hasEmptyUncompressedData(current));
     ui->actionUncompressedHashSm3->setDisabled(model->hasEmptyUncompressedData(current));
     
-    ui->actionRebuild->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
+    bool editable = type != Types::Root && type != Types::FreeSpace && !empty;
+    ui->actionRebuild->setEnabled(editable);
     ui->actionExtractBody->setDisabled(model->hasEmptyBody(current));
     ui->actionExtractUncompressed->setDisabled(model->hasEmptyUncompressedData(current));
-    ui->actionRemove->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
+    ui->actionRemove->setEnabled(editable);
     ui->actionInsertInto->setEnabled((type == Types::Volume && subtype != Subtypes::UnknownVolume) ||
         (type == Types::File && subtype != EFI_FV_FILETYPE_ALL && subtype != EFI_FV_FILETYPE_RAW && subtype != EFI_FV_FILETYPE_PAD) ||
         (type == Types::Section && (subtype == EFI_SECTION_COMPRESSION || subtype == EFI_SECTION_GUID_DEFINED || subtype == EFI_SECTION_DISPOSABLE)));
     ui->actionInsertBefore->setEnabled(type == Types::File || type == Types::Section);
     ui->actionInsertAfter->setEnabled(type == Types::File || type == Types::Section);
-    ui->actionReplace->setEnabled((type == Types::Region && subtype != Subtypes::DescriptorRegion) || type == Types::Volume || type == Types::File || type == Types::Section);
-    ui->actionReplaceBody->setEnabled(type == Types::Volume || type == Types::File || type == Types::Section);
+    ui->actionReplace->setEnabled(editable);
+    ui->actionReplaceBody->setEnabled(editable && !model->hasEmptyBody(current));
     
     ui->menuMessageActions->setEnabled(false);
 }
@@ -725,6 +726,7 @@ void UEFITool::replace(const UINT8 mode)
     QByteArray data = inputFile.readAll();
     inputFile.close();
 
+    UINT32 actionBase = model->base(index);
     UINT32 patchOffset = model->base(index);
     UINT32 expectedSize = model->fullSize(index);
     if (mode == REPLACE_MODE_BODY) {
@@ -748,8 +750,11 @@ void UEFITool::replace(const UINT8 mode)
         return;
     }
 
-    QModelIndex patchedIndex = model->findByBase(patchOffset);
+    QModelIndex patchedIndex = model->findByBase(actionBase);
+    if (!patchedIndex.isValid())
+        patchedIndex = model->findByBase(patchOffset);
     if (patchedIndex.isValid()) {
+        model->setAction(patchedIndex, Actions::Replace);
         ui->structureTreeView->selectionModel()->select(patchedIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows | QItemSelectionModel::Clear);
         ui->structureTreeView->setCurrentIndex(patchedIndex);
         populateUi(patchedIndex);
@@ -863,6 +868,52 @@ void UEFITool::remove()
     QModelIndex index = ui->structureTreeView->selectionModel()->currentIndex();
     if (!index.isValid())
         return;
+
+    UINT8 type = model->type(index);
+    bool empty = model->hasEmptyHeader(index) && model->hasEmptyBody(index) && model->hasEmptyTail(index);
+    if (type != Types::Root && type != Types::FreeSpace && !empty) {
+        UINT32 offset = model->base(index);
+        UINT32 size = model->fullSize(index);
+        if (size == 0 || (quint64)offset + (quint64)size > (quint64)openedImage.size()) {
+            QMessageBox::critical(this, tr("Remove failed"), tr("Item range is outside the opened image"), QMessageBox::Ok);
+            return;
+        }
+
+        QMessageBox::StandardButton answer = QMessageBox::warning(this,
+            tr("Remove item"),
+            tr("This will delete the selected item (%1 bytes at offset %2) and shift all following data. "
+               "The result may require header, checksum, alignment, FIT or security data fixes.")
+                .arg(size)
+                .arg(offset, 0, 16).toUpper(),
+            QMessageBox::Ok | QMessageBox::Cancel,
+            QMessageBox::Cancel);
+        if (answer != QMessageBox::Ok)
+            return;
+
+        QByteArray backup = openedImage;
+        openedImage.remove(offset, size);
+        replacementPatches.clear();
+
+        if (!reloadOpenedImage(offset)) {
+            openedImage = backup;
+            reloadOpenedImage(offset);
+            QMessageBox::critical(this, tr("Remove failed"), tr("Image can not be parsed after deleting the selected item"), QMessageBox::Ok);
+            return;
+        }
+
+        QModelIndex nextIndex = model->findByBase(offset);
+        if (!nextIndex.isValid() && offset > 0)
+            nextIndex = model->findByBase(offset - 1);
+        if (nextIndex.isValid()) {
+            ui->structureTreeView->selectionModel()->select(nextIndex, QItemSelectionModel::Select | QItemSelectionModel::Rows | QItemSelectionModel::Clear);
+            ui->structureTreeView->setCurrentIndex(nextIndex);
+            populateUi(nextIndex);
+        }
+
+        ui->actionSaveImageFile->setEnabled(true);
+        ui->statusBar->showMessage(tr("Item removed at offset %1").arg(offset, 0, 16).toUpper());
+        return;
+    }
 
     USTATUS result = ffsOps->remove(index);
     showBuilderMessages();
@@ -2056,7 +2107,8 @@ bool UEFITool::hasTreeActions(const QModelIndex &index) const
     if (!index.isValid())
         return false;
 
-    if (model->action(index) != Actions::NoAction)
+    UINT8 action = model->action(index);
+    if (action != Actions::NoAction && action != Actions::Replace)
         return true;
 
     for (int i = 0; i < model->rowCount(index); i++) {
